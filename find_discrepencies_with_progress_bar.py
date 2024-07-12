@@ -11,6 +11,7 @@ Assumptions:
 import csv 
 import sys
 import os.path
+from tqdm import tqdm
 import time
 
 def number_to_excel_column(n):
@@ -81,17 +82,20 @@ if __name__ == "__main__":
     # For each row in the original csv file
     # Check if it exists in the uploaded csv file
     # If it exists, compare that row of values to the original 
-    for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
-        if row_from_ori_csv[0] not in uploaded_hashed_csv:
-            issues.append(f'{row_from_ori_csv[0]} | NOT EXIST')
-            continue
+    with tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows") as pbar:
+        for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
+            if row_from_ori_csv[0] not in uploaded_hashed_csv:
+                issues.append(f'{row_from_ori_csv[0]} | NOT EXIST')
+                continue
 
-        row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[0]]
-        row_from_ori_csv = row_from_ori_csv[1:]
+            row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[0]]
+            row_from_ori_csv = row_from_ori_csv[1:]
 
-        for col_num in range(len(row_from_ori_csv)):
-            if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
-                issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
+            for col_num in range(len(row_from_ori_csv)):
+                if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
+                    issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
+            
+            pbar.update(1)
 
     # Close the original csv file, we've read through everything 
     f_ori.close()
