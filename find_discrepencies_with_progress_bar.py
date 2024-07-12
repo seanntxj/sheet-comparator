@@ -94,7 +94,7 @@ if __name__ == "__main__":
             for col_num in range(len(row_from_ori_csv)):
                 if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
                     issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
-            
+            time.sleep(0.005)
             pbar.update(1)
 
     # Close the original csv file, we've read through everything 

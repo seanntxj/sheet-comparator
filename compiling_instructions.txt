@@ -1,0 +1,3 @@
+MACOS ARM
+venv/bin/nuitka3 --standalone --macos-create-app-bundle <file>.py
+<file>.app/Contents/MacOS/<file>
