@@ -1,3 +1,7 @@
 MACOS ARM
 venv/bin/nuitka3 --standalone --macos-create-app-bundle <file>.py
 <file>.app/Contents/MacOS/<file>
+
+Windows
+python -m nuitka --standalone --onefile find_discrepencies_with_progress_bar.py
+start find_discrepencies_with_progress_bar.exe
