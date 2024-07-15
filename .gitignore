@@ -47,6 +47,7 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
+*.csv
 
 # Python venv
 /venv
@@ -54,3 +55,6 @@ Thumbs.db
 # Build files 
 /*build
 /*dist
+
+# Issue log file
+issues.txt
