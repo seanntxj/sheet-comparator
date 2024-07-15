@@ -2,15 +2,18 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk  # Import ttk for progressbar
 import time
+import threading
 
-def compare_csv_files(file1_path: str, file2_path: str, progress_var: tk.IntVar):
-  # Simulate some progress for demonstration
-  for i in range(100):
-      progress_var.set(i + 1)  # Update progress bar value
-      root.update_idletasks()  # Update the GUI to reflect progress bar change
-      time.sleep(0.01)  # Simulate some processing time (replace with actual comparison logic)
-  comparison_result = "CSV files compared!"
-  return comparison_result
+def compare_csv_files(file1_path: str, file2_path: str, progress_var: tk.IntVar, output_label: tk.Label, compare_button: tk.Button):
+    output_label.config(text='          Loading...         ')
+    compare_button.config(state=tk.DISABLED)
+    # Simulate some progress for demonstration
+    for i in range(100):
+        progress_var.set(i + 1)  # Update progress bar value
+        root.update_idletasks()  # Update the GUI to reflect progress bar change
+        time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
+    output_label.config(text='Completed')
+    compare_button.config(state=tk.NORMAL)
 
 def get_csv_file(file_path_var: tk.StringVar):
     """
@@ -19,6 +22,17 @@ def get_csv_file(file_path_var: tk.StringVar):
     file_path = filedialog.askopenfilename(title="Select CSV file", filetypes=[("CSV Files", "*.csv")])
     if file_path:
         file_path_var.set(file_path)
+
+
+def compare_button_click():
+    file1_path = file1_var.get()
+    file2_path = file2_var.get()
+    
+    # Run comparison in a separate thread
+    comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, file2_path, progress_var, output_label, compare_button))
+    comparison_thread.start()
+    
+    progress_var.set(0)
 
 # Window and widgets
 root = tk.Tk()
@@ -56,13 +70,6 @@ progress_var = tk.IntVar()
 progress_bar = ttk.Progressbar(root, maximum=100, variable=progress_var)
 progress_bar.pack(fill=tk.X, padx=25)  # Pack the progress bar with padding
 
-def compare_button_click():
-    file1_path = file1_var.get()
-    file2_path = file2_var.get()
-    output_label.config(text='          Loading...         ')
-    result = compare_csv_files(file1_path, file2_path, progress_var)
-    output_label.config(text=result)
-    progress_var.set(0)
 
 compare_button = tk.Button(root, text="Compare", command=compare_button_click)
 compare_button.pack()

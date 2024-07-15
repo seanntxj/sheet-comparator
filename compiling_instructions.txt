@@ -4,4 +4,5 @@ venv/bin/nuitka3 --standalone --macos-create-app-bundle <file>.py
 
 Windows
 python -m nuitka --standalone --onefile find_discrepencies_with_progress_bar.py
+python -m nuitka --standalone --onefile --enable-plugin=tk-inter --windows-console-mode=disable find_discrepencies_gui.py
 start find_discrepencies_with_progress_bar.exe
