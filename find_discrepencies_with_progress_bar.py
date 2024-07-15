@@ -30,7 +30,18 @@ def number_to_excel_column(n):
     column_name = chr(65 + remainder) + column_name
   return column_name
 
-def find_discrepencies(uploaded_file_path: str, original_file_path: str):
+def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None) -> list:
+    """
+    Finds the difference between two CSV files. 
+
+    Args: 
+        uploaded_file_path: The path that points to the CSV file which should match the original. 
+        original_file_path: The path that points to the CSV file which is meant to be compared against (or in other words, this CSV file is the source of truth).
+        progress_to_show_in_gui: A function from the GUI Python file which accepts the current percentage progress of the script as an integer.
+
+    Returns: 
+        A list containing strings of the discrepencies found.
+    """
 
     # Read uploaded csv file
     f_uploaded = open(uploaded_file_path, 'r')
@@ -50,7 +61,7 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str):
     for i in range(len(fields_ori_csv)):
         if fields_ori_csv[i] not in fields_uploaded_csv:
             print(f'FIELD {fields_ori_csv[i]} NOT EXIST. TERMINATING SCRIPT.')
-            quit()
+            return ['FIELD {fields_ori_csv[i]} NOT EXIST.']
 
     # Initialise a list to hold all the found issues (if any)
     issues = []
@@ -66,6 +77,7 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str):
     # For each row in the original csv file
     # Check if it exists in the uploaded csv file
     # If it exists, compare that row of values to the original 
+    previous_update = 0 # For GUI 
     with tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows") as pbar:
         for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
             if row_from_ori_csv[0] not in uploaded_hashed_csv:
@@ -79,7 +91,12 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str):
                 if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
                     issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
             
+            # GUI and TQDM progress bars
             pbar.update(1)
+            progress_in_percentage = min( int(row_num / len(uploaded_hashed_csv)*100) + 1, 100)
+            if progress_to_show_in_gui != None and previous_update != progress_in_percentage:
+                progress_to_show_in_gui(progress_in_percentage)
+                previous_update = progress_in_percentage
 
     # Close the original csv file, we've read through everything 
     f_ori.close()
@@ -92,6 +109,17 @@ def write_issues(issue_list: list):
     f = open('issues.txt', 'w')
     f.write('\n'.join(issue_list) + '\n')
     f.close()
+
+def load_mapping_uploaded_to_original():
+    f = open('mapping.csv', 'r')
+    mapping_csv_reader = csv.reader(f)
+    fields = next(mapping_csv_reader)
+    mapping = {}
+    for _, row in enumerate(mapping_csv_reader):
+        original, uploaded = row[0], row[1]
+        mapping[original] = uploaded
+        mapping[uploaded] = original
+    return mapping
 
 if __name__ == "__main__": 
     # Get input parameters, if not use default name

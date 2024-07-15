@@ -3,16 +3,29 @@ from tkinter import filedialog
 from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
+from find_discrepencies_with_progress_bar import find_discrepencies
+
+TESTING = False
 
 def compare_csv_files(file1_path: str, file2_path: str, progress_var: tk.IntVar, output_label: tk.Label, compare_button: tk.Button):
     output_label.config(text='          Loading...         ')
     compare_button.config(state=tk.DISABLED)
-    # Simulate some progress for demonstration
-    for i in range(100):
-        progress_var.set(i + 1)  # Update progress bar value
-        root.update_idletasks()  # Update the GUI to reflect progress bar change
-        time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
-    output_label.config(text='Completed')
+    res = 'All ok.'
+
+    def update_progress_bar(progress_value):
+        progress_var.set(progress_value)  # Update progress bar value
+        root.update_idletasks() # Update the GUI to reflect progress bar change
+
+    if TESTING: # Simulate some progress for demonstration
+        for i in range(100):
+            update_progress_bar(i + 1) 
+            time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
+    else: # Run actual comparison
+        res = find_discrepencies(file2_path, file1_path, update_progress_bar)
+        if len(res) > 0: 
+            res = 'Discrepencies found, refer to issues.txt for list of found issues.'
+
+    output_label.config(text=res)   
     compare_button.config(state=tk.NORMAL)
 
 def get_csv_file(file_path_var: tk.StringVar):
