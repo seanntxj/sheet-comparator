@@ -27,6 +27,10 @@ def get_csv_file(file_path_var: tk.StringVar):
 def compare_button_click():
     file1_path = file1_var.get()
     file2_path = file2_var.get()
+
+    if file1_path == ""  or file2_path == "":
+        output_label.config(text='Please select both CSV files first.')
+        return 
     
     # Run comparison in a separate thread
     comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, file2_path, progress_var, output_label, compare_button))
@@ -69,7 +73,6 @@ file2_browse_button.pack(side=tk.RIGHT)
 progress_var = tk.IntVar()
 progress_bar = ttk.Progressbar(root, maximum=100, variable=progress_var)
 progress_bar.pack(fill=tk.X, padx=25)  # Pack the progress bar with padding
-
 
 compare_button = tk.Button(root, text="Compare", command=compare_button_click)
 compare_button.pack()
