@@ -30,36 +30,17 @@ def number_to_excel_column(n):
     column_name = chr(65 + remainder) + column_name
   return column_name
 
-issues = []
-def write_issues(issue_list: list):
-    f = open('issues.txt', 'w')
-    f.write('\n'.join(issue_list) + '\n')
-    f.close()
-
-if __name__ == "__main__": 
-    # Get input parameters, if not use default name
-    try:
-        name_of_script = sys.argv[0]
-        ori_file_name = sys.argv[1]
-        uploaded_file_name = sys.argv[2]
-    except: 
-        print(f'Using default filenames ori.csv and uploaded.csv\n\n')
-        ori_file_name = 'ori.csv'
-        uploaded_file_name = 'uploaded.csv'
-
-    # Give error and quit script if files cannot be found
-    if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
-        raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
+def find_discrepencies(uploaded_file_path: str, original_file_path: str):
 
     # Read uploaded csv file
-    f_uploaded = open(uploaded_file_name, 'r')
+    f_uploaded = open(uploaded_file_path, 'r')
     uploaded_csv_reader = csv.reader(f_uploaded)
 
     # Field names 
     fields_uploaded_csv = next(uploaded_csv_reader)
 
     # Read original csv file
-    f_ori = open(ori_file_name, 'r')
+    f_ori = open(original_file_path, 'r')
     ori_csv_reader = csv.reader(f_ori)
     
     # Field names 
@@ -70,6 +51,9 @@ if __name__ == "__main__":
         if fields_ori_csv[i] not in fields_uploaded_csv:
             print(f'FIELD {fields_ori_csv[i]} NOT EXIST. TERMINATING SCRIPT.')
             quit()
+
+    # Initialise a list to hold all the found issues (if any)
+    issues = []
 
     # Hash the uploaded csv file based on its key value
     uploaded_hashed_csv = {}
@@ -100,9 +84,34 @@ if __name__ == "__main__":
     # Close the original csv file, we've read through everything 
     f_ori.close()
 
+    # Write the issues into a text file and return the list if needed
+    write_issues(issues)
+    return issues
+
+def write_issues(issue_list: list):
+    f = open('issues.txt', 'w')
+    f.write('\n'.join(issue_list) + '\n')
+    f.close()
+
+if __name__ == "__main__": 
+    # Get input parameters, if not use default name
+    try:
+        name_of_script = sys.argv[0]
+        ori_file_name = sys.argv[1]
+        uploaded_file_name = sys.argv[2]
+    except: 
+        print(f'Using default filenames ori.csv and uploaded.csv\n\n')
+        ori_file_name = 'ori.csv'
+        uploaded_file_name = 'uploaded.csv'
+
+    # Give error and quit script if files cannot be found
+    if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
+        raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
+
+    issues = find_discrepencies(uploaded_file_name, ori_file_name)
+
     # Write any issues down into the issues list text file
     if len(issues) > 0:
-        write_issues(issues)
         print(f'Discrepencies found, please refer to issues.txt')
     else: 
         print(f'No discrepencies found!')
