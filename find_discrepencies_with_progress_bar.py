@@ -14,6 +14,7 @@ import os.path
 from tqdm import tqdm
 import time
 from enum import Enum
+from openpyxl import Workbook, styles
 
 class NATURE_OF_ISSUES(Enum): 
     OK = "No issues found."
@@ -164,6 +165,35 @@ def write_issues(issues: list[ISSUE_ITEM]):
     f.close()
     return 
 
+def write_issues_to_excel(issues: list[ISSUE_ITEM]) -> None:
+    # Create the excel file
+    filename = f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
+    if not os.path.isfile(filename):
+        wb = Workbook()
+        wb.save(filename)
+    
+    sheet = wb.active
+
+    row_index = 1
+    for row in issues:
+        sheet.cell(row=row_index, column=1).value = 'ORI'
+        for x, item in enumerate(row.original_row):
+            sheet.cell(row=row_index, column=x+2).value = item
+        for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes): 
+            sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+
+        row_index += 1
+
+        sheet.cell(row=row_index, column=1).value = 'UPL'
+        for x, item in enumerate(row.uploaded_row):
+            sheet.cell(row=row_index, column=x+2).value = item
+        for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes): 
+            sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+        row_index += 1
+
+    wb.save(filename)
+    return 
+
 def load_mapping_uploaded_to_original():
     f = open('mapping.csv', 'r')
     mapping_csv_reader = csv.reader(f)
@@ -191,5 +221,5 @@ if __name__ == "__main__":
         raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
 
     issues = find_discrepencies(uploaded_file_name, ori_file_name)
-    write_issues(issues.issue_list)
+    write_issues_to_excel(issues.issue_list)
     print(issues.status.value)
