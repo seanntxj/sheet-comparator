@@ -143,6 +143,8 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
                 progress_to_show_in_gui(progress_in_percentage)
                 previous_update = progress_in_percentage
 
+    progress_to_show_in_gui(100)
+    
     # Close the original csv file, we've read through everything 
     f_ori.close()
 

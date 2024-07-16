@@ -21,9 +21,7 @@ def compare_csv_files(file1_path: str, file2_path: str, progress_var: tk.IntVar,
             update_progress_bar(i + 1) 
             time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
     else: # Run actual comparison
-        res = find_discrepencies(file2_path, file1_path, update_progress_bar)
-        if len(res) > 0: 
-            res = 'Discrepencies found, refer to issues.txt for list of found issues.'
+        res = find_discrepencies(file2_path, file1_path, update_progress_bar).status.value
 
     output_label.config(text=res)   
     compare_button.config(state=tk.NORMAL)
@@ -64,6 +62,7 @@ if __name__ == "__main__":
     file1_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file1_var = tk.StringVar()
+    file1_var.set('ori.csv')
     file1_textbox = tk.Entry(file1_frame, textvariable=file1_var)
     file1_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
@@ -77,6 +76,7 @@ if __name__ == "__main__":
     file2_label.pack(side=tk.LEFT)
 
     file2_var = tk.StringVar()
+    file2_var.set('uploaded.csv')
     file2_textbox = tk.Entry(file2_frame, textvariable=file2_var)
     file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)
 
