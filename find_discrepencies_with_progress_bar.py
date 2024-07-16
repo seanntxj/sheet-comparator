@@ -21,34 +21,32 @@ class NATURE_OF_ISSUES(Enum):
     FIELDS_MISMATCH = "Columns fields don't match, please check the issue log."
     FIELDS_LENGTH_MISMATCH = "The number of columns in each csv file don't match. Please check for any trailing commas with notepad."
     
-class ISSUES:
-    def __init__(self, status: NATURE_OF_ISSUES = NATURE_OF_ISSUES.OK, original_rows: list = [], uploaded_rows: list = [], mismatched_columns_indexes: list = []) -> None:
-        self.status = status
-        self.original_rows = original_rows
-        self.uploaded_rows = uploaded_rows
+class ISSUE_ITEM:
+    def __init__(self, original_row: list, uploaded_row: list, mismatched_columns_indexes: list) -> None:
+        self.original_row = original_row
+        self.uploaded_row = uploaded_row
         self.mismatched_columns_indexes = mismatched_columns_indexes
+    
+class ISSUES_MAIN:
+    def __init__(self, status: NATURE_OF_ISSUES = NATURE_OF_ISSUES.OK, issue_list: list[ISSUE_ITEM] = []) -> None:
+        self.status = status
+        self.issue_list = issue_list
         
-    def _mark_uploaded_not_existing(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0): 
+    def insert_issue_missing_uploaded_row(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0):
         row_to_indicate_missing_row = []
         for i in range(len(original_row)):
             if i != column_of_identifier:
                 row_to_indicate_missing_row.append('MISSING')
             else: 
                 row_to_indicate_missing_row.append(value_of_identifier)
-        self.uploaded_rows.append(row_to_indicate_missing_row)
-        return
-    
-    def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepency_is_found: list): 
-        self.original_rows.append(original_row)
-        self.uploaded_rows.append(uploaded_row)
-        self.mismatched_columns_indexes.append(columns_where_discrepency_is_found)
-        return
+        issue_item = ISSUE_ITEM(original_row, row_to_indicate_missing_row, [column_of_identifier])
+        self.issue_list.append(issue_item)
+        return issue_item
 
-    def insert_issue_missing_uploaded_row(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0):
-        self._mark_uploaded_not_existing(original_row, value_of_identifier, column_of_identifier)
-        self.original_rows.append(original_row)
-        self.mismatched_columns_indexes.append([column_of_identifier])
-        return
+    def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepency_is_found: list):
+        issue_item = ISSUE_ITEM(original_row, uploaded_row, columns_where_discrepency_is_found)
+        self.issue_list.append(issue_item)
+        return issue_item
 
     
 def number_to_excel_column(n):
@@ -67,7 +65,7 @@ def number_to_excel_column(n):
     column_name = chr(65 + remainder) + column_name
   return column_name
 
-def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None, identifiying_field_index: int = 0) -> ISSUES:
+def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None, identifiying_field_index: int = 0) -> ISSUES_MAIN:
     """
     Finds the difference between two CSV files. 
 
@@ -95,7 +93,7 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     fields_ori_csv = next(ori_csv_reader)
 
     # Initialise issues custom class to hold all the found issues (if any)
-    issues = ISSUES()
+    issues = ISSUES_MAIN()
 
     # Checking if every field in the original csv exists in the uploaded csv - If failed will not proceed with rest of check, return issue log immediately
     mismatched_fields = []
@@ -149,7 +147,7 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     f_ori.close()
 
     # Write the issues into an excel file and return the issue log
-    if len(issues.original_rows) == 0 and len(issues.uploaded_rows) == 0: 
+    if len(issues.issue_list) == 0: 
         issues.status = NATURE_OF_ISSUES.OK
     else: 
         issues.status = NATURE_OF_ISSUES.DISCREPENCY
