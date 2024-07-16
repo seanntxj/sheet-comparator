@@ -3,28 +3,36 @@ from tkinter import filedialog
 from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
-from find_discrepencies_with_progress_bar import find_discrepencies
+from find_discrepencies_with_progress_bar import find_discrepencies, write_issues
 
 TESTING = False
 
 def compare_csv_files(file1_path: str, file2_path: str, progress_var: tk.IntVar, output_label: tk.Label, compare_button: tk.Button):
-    output_label.config(text='          Loading...         ')
-    compare_button.config(state=tk.DISABLED)
-    res = 'All ok.'
-
-    def update_progress_bar(progress_value):
+    def update_progress_bar(progress_value: int) -> None:
         progress_var.set(progress_value)  # Update progress bar value
         root.update_idletasks() # Update the GUI to reflect progress bar change
+    
+    def update_progress_status(status: str) -> None:
+        output_label.config(text=f'{" "*500}')
+        output_label.config(text=status)
+        root.update_idletasks() # Update the GUI to reflect progress bar change
+
+    compare_button.config(state=tk.DISABLED)
 
     if TESTING: # Simulate some progress for demonstration
         for i in range(100):
             update_progress_bar(i + 1) 
             time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
     else: # Run actual comparison
-        res = find_discrepencies(file2_path, file1_path, update_progress_bar).status.value
+        res = find_discrepencies(file2_path, file1_path, update_progress_bar, update_progress_status)
 
-    output_label.config(text=res)   
+    if len(res.issue_list) > 0:
+        write_issues(res.issue_list)
+
+    update_progress_status(res.status.value)
     compare_button.config(state=tk.NORMAL)
+    progress_var.set(100)
+    return
 
 def get_csv_file(file_path_var: tk.StringVar):
     """
@@ -45,8 +53,7 @@ def compare_button_click():
     # Run comparison in a separate thread
     comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, file2_path, progress_var, output_label, compare_button))
     comparison_thread.start()
-    
-    progress_var.set(0)
+    return
 
 if __name__ == "__main__":
     # Window and widgets

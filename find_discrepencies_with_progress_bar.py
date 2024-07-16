@@ -48,7 +48,11 @@ class ISSUES_MAIN:
         self.issue_list.append(issue_item)
         return issue_item
 
-def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None, identifiying_field_index: int = 0) -> ISSUES_MAIN:
+def find_discrepencies(uploaded_file_path: str, 
+                       original_file_path: str, 
+                       progress_to_show_in_gui = None,
+                       status_to_show_in_gui = None,
+                       identifiying_field_index: int = 0) -> ISSUES_MAIN:
     """
     Finds the difference between two CSV files. 
 
@@ -60,6 +64,9 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     Returns: 
         A list containing strings of the discrepencies found.
     """
+    # Update status
+    if status_to_show_in_gui:
+        status_to_show_in_gui('Setting up...')
 
     # Read uploaded csv file
     f_uploaded = open(uploaded_file_path, 'r')
@@ -76,7 +83,7 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     fields_ori_csv = next(ori_csv_reader)
 
     # Initialise issues custom class to hold all the found issues (if any)
-    issues = ISSUES_MAIN()
+    issues = ISSUES_MAIN(status=NATURE_OF_ISSUES.OK, issue_list=[])
 
     # Checking if every field in the original csv exists in the uploaded csv - If failed will not proceed with rest of check, return issue log immediately
     mismatched_fields = []
@@ -90,6 +97,10 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     if len(fields_ori_csv) != len(fields_uploaded_csv): 
         issues.status = NATURE_OF_ISSUES.FIELDS_LENGTH_MISMATCH
         return issues
+    
+    # Update status
+    if status_to_show_in_gui:
+        status_to_show_in_gui('Caching uploaded csv...')
 
     # Hash the uploaded csv file based on its key value
     uploaded_hashed_csv = {}
@@ -98,6 +109,10 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
 
     # Close the uploaded csv file, it's no longer needed as its now been hashed into memory
     f_uploaded.close()
+
+    # Update status
+    if status_to_show_in_gui:
+        status_to_show_in_gui('Comparing csvs...')
 
     # For each row in the original csv file
     # Check if it exists in the uploaded csv file
@@ -133,11 +148,15 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
         issues.status = NATURE_OF_ISSUES.OK
     else: 
         issues.status = NATURE_OF_ISSUES.DISCREPENCY
+
+    # Update status
+    if status_to_show_in_gui:
+        status_to_show_in_gui(issues.status.value)
     return issues
 
-def write_issues(issue_list: ISSUES_MAIN):
+def write_issues(issues: list[ISSUE_ITEM]):
     f = open(f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
-    for item in issues.issue_list:
+    for item in issues:
         f.write(f'ORI | {item.original_row}\n')
         f.write(f'UPL | {item.uploaded_row}\n')
         f.write(f'{item.mismatched_columns_indexes}\n')
@@ -172,5 +191,5 @@ if __name__ == "__main__":
         raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
 
     issues = find_discrepencies(uploaded_file_name, ori_file_name)
-    write_issues(issues)
+    write_issues(issues.issue_list)
     print(issues.status.value)
