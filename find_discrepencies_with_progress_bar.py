@@ -13,7 +13,44 @@ import sys
 import os.path
 from tqdm import tqdm
 import time
+from enum import Enum
 
+class NATURE_OF_ISSUES(Enum): 
+    OK = "No issues found."
+    DISCREPENCY = "Discrepencies found, please check the issue log."
+    FIELDS_MISMATCH = "Columns fields don't match, please check the issue log."
+    FIELDS_LENGTH_MISMATCH = "The number of columns in each csv file don't match. Please check for any trailing commas with notepad."
+    
+class ISSUES:
+    def __init__(self, status: NATURE_OF_ISSUES = NATURE_OF_ISSUES.OK, original_rows: list = [], uploaded_rows: list = [], mismatched_columns_indexes: list = []) -> None:
+        self.status = status
+        self.original_rows = original_rows
+        self.uploaded_rows = uploaded_rows
+        self.mismatched_columns_indexes = mismatched_columns_indexes
+        
+    def _mark_uploaded_not_existing(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0): 
+        row_to_indicate_missing_row = []
+        for i in range(len(original_row)):
+            if i != column_of_identifier:
+                row_to_indicate_missing_row.append('MISSING')
+            else: 
+                row_to_indicate_missing_row.append(value_of_identifier)
+        self.uploaded_rows.append(row_to_indicate_missing_row)
+        return
+    
+    def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepency_is_found: list): 
+        self.original_rows.append(original_row)
+        self.uploaded_rows.append(uploaded_row)
+        self.mismatched_columns_indexes.append(columns_where_discrepency_is_found)
+        return
+
+    def insert_issue_missing_uploaded_row(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0):
+        self._mark_uploaded_not_existing(original_row, value_of_identifier, column_of_identifier)
+        self.original_rows.append(original_row)
+        self.mismatched_columns_indexes.append([column_of_identifier])
+        return
+
+    
 def number_to_excel_column(n):
   """Converts a number to its corresponding Excel column format.
 
@@ -30,7 +67,7 @@ def number_to_excel_column(n):
     column_name = chr(65 + remainder) + column_name
   return column_name
 
-def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None) -> list:
+def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None, identifiying_field_index: int = 0) -> ISSUES:
     """
     Finds the difference between two CSV files. 
 
@@ -57,19 +94,26 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     # Field names 
     fields_ori_csv = next(ori_csv_reader)
 
-    # Checking if every field in the original csv exists in the uploaded csv - If failed will not proceed with rest of check
+    # Initialise issues custom class to hold all the found issues (if any)
+    issues = ISSUES()
+
+    # Checking if every field in the original csv exists in the uploaded csv - If failed will not proceed with rest of check, return issue log immediately
+    mismatched_fields = []
     for i in range(len(fields_ori_csv)):
         if fields_ori_csv[i] not in fields_uploaded_csv:
-            print(f'FIELD {fields_ori_csv[i]} NOT EXIST. TERMINATING SCRIPT.')
-            return ['FIELD {fields_ori_csv[i]} NOT EXIST.']
-
-    # Initialise a list to hold all the found issues (if any)
-    issues = []
+            issues.status = NATURE_OF_ISSUES.FIELDS_MISMATCH
+            mismatched_fields.append(i)
+    if issues.status == NATURE_OF_ISSUES.FIELDS_MISMATCH: 
+        issues.insert_issue(fields_ori_csv, fields_uploaded_csv, mismatched_fields)
+        return issues
+    if len(fields_ori_csv) != len(fields_uploaded_csv): 
+        issues.status = NATURE_OF_ISSUES.FIELDS_LENGTH_MISMATCH
+        return issues
 
     # Hash the uploaded csv file based on its key value
     uploaded_hashed_csv = {}
     for row in uploaded_csv_reader:
-        uploaded_hashed_csv[row[0]] = row[1:]
+        uploaded_hashed_csv[row[identifiying_field_index]] = row
 
     # Close the uploaded csv file, it's no longer needed as its now been hashed into memory
     f_uploaded.close()
@@ -80,16 +124,19 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     previous_update = 0 # For GUI 
     with tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows") as pbar:
         for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
-            if row_from_ori_csv[0] not in uploaded_hashed_csv:
-                issues.append(f'{row_from_ori_csv[0]} | NOT EXIST')
+            if row_from_ori_csv[identifiying_field_index] not in uploaded_hashed_csv:
+                issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[identifiying_field_index], identifiying_field_index)
                 continue
 
-            row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[0]]
-            row_from_ori_csv = row_from_ori_csv[1:]
+            row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[identifiying_field_index]]
 
+            mismatched_fields = []
             for col_num in range(len(row_from_ori_csv)):
                 if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
-                    issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
+                    mismatched_fields.append(col_num)
+                    # issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
+            if len(mismatched_fields) > 0: 
+                issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
             
             # GUI and TQDM progress bars
             pbar.update(1)
@@ -101,8 +148,11 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
     # Close the original csv file, we've read through everything 
     f_ori.close()
 
-    # Write the issues into a text file and return the list if needed
-    write_issues(issues)
+    # Write the issues into an excel file and return the issue log
+    if len(issues.original_rows) == 0 and len(issues.uploaded_rows) == 0: 
+        issues.status = NATURE_OF_ISSUES.OK
+    else: 
+        issues.status = NATURE_OF_ISSUES.DISCREPENCY
     return issues
 
 def write_issues(issue_list: list):
@@ -137,9 +187,4 @@ if __name__ == "__main__":
         raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
 
     issues = find_discrepencies(uploaded_file_name, ori_file_name)
-
-    # Write any issues down into the issues list text file
-    if len(issues) > 0:
-        print(f'Discrepencies found, please refer to issues.txt')
-    else: 
-        print(f'No discrepencies found!')
+    print(issues.status.value)
