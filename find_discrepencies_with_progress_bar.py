@@ -48,23 +48,6 @@ class ISSUES_MAIN:
         self.issue_list.append(issue_item)
         return issue_item
 
-    
-def number_to_excel_column(n):
-  """Converts a number to its corresponding Excel column format.
-
-  Args:
-    n: The number to convert.
-
-  Returns:
-    The Excel column format as a string.
-  """
-
-  column_name = ""
-  while n > 0:
-    n, remainder = divmod(n - 1, 26)
-    column_name = chr(65 + remainder) + column_name
-  return column_name
-
 def find_discrepencies(uploaded_file_path: str, original_file_path: str, progress_to_show_in_gui = None, identifiying_field_index: int = 0) -> ISSUES_MAIN:
     """
     Finds the difference between two CSV files. 
@@ -152,10 +135,15 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
         issues.status = NATURE_OF_ISSUES.DISCREPENCY
     return issues
 
-def write_issues(issue_list: list):
-    f = open('issues.txt', 'w')
-    f.write('\n'.join(issue_list) + '\n')
+def write_issues(issue_list: ISSUES_MAIN):
+    f = open(f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
+    for item in issues.issue_list:
+        f.write(f'ORI | {item.original_row}\n')
+        f.write(f'UPL | {item.uploaded_row}\n')
+        f.write(f'{item.mismatched_columns_indexes}\n')
+        f.write(f'\n')
     f.close()
+    return 
 
 def load_mapping_uploaded_to_original():
     f = open('mapping.csv', 'r')
@@ -184,12 +172,5 @@ if __name__ == "__main__":
         raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
 
     issues = find_discrepencies(uploaded_file_name, ori_file_name)
+    write_issues(issues)
     print(issues.status.value)
-
-    f = open(f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
-    for item in issues.issue_list:
-        f.write(f'ORI | {item.original_row}\n')
-        f.write(f'UPL | {item.uploaded_row}\n')
-        f.write(f'{item.mismatched_columns_indexes}\n')
-        f.write(f'\n')
-    f.close()

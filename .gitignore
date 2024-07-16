@@ -56,6 +56,7 @@ Thumbs.db
 # Build files 
 /*build
 /*dist
+/builds
 
 # Issue log file
 issues.txt
