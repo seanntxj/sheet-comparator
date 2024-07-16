@@ -143,8 +143,6 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
                 progress_to_show_in_gui(progress_in_percentage)
                 previous_update = progress_in_percentage
 
-    progress_to_show_in_gui(100)
-    
     # Close the original csv file, we've read through everything 
     f_ori.close()
 
@@ -188,3 +186,9 @@ if __name__ == "__main__":
 
     issues = find_discrepencies(uploaded_file_name, ori_file_name)
     print(issues.status.value)
+
+    for item in issues.issue_list:
+        print(f'ORI | {item.original_row}')
+        print(f'UPL | {item.uploaded_row}')
+        print(f'{item.mismatched_columns_indexes}')
+        print(f'\n')
