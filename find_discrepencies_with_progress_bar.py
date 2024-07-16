@@ -132,7 +132,6 @@ def find_discrepencies(uploaded_file_path: str, original_file_path: str, progres
             for col_num in range(len(row_from_ori_csv)):
                 if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
                     mismatched_fields.append(col_num)
-                    # issues.append(f'{number_to_excel_column(col_num)}{row_num} | ORI: {row_from_ori_csv[col_num]} | UPLOADED: {row_from_uploaded_csv[col_num]} ')
             if len(mismatched_fields) > 0: 
                 issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
             
@@ -187,8 +186,10 @@ if __name__ == "__main__":
     issues = find_discrepencies(uploaded_file_name, ori_file_name)
     print(issues.status.value)
 
+    f = open(f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
     for item in issues.issue_list:
-        print(f'ORI | {item.original_row}')
-        print(f'UPL | {item.uploaded_row}')
-        print(f'{item.mismatched_columns_indexes}')
-        print(f'\n')
+        f.write(f'ORI | {item.original_row}\n')
+        f.write(f'UPL | {item.uploaded_row}\n')
+        f.write(f'{item.mismatched_columns_indexes}\n')
+        f.write(f'\n')
+    f.close()
