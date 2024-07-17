@@ -3,6 +3,7 @@ from tkinter import filedialog
 from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
+import os
 from find_discrepencies_with_progress_bar import find_discrepencies, write_issues, write_issues_to_excel
 
 TESTING = False
@@ -14,7 +15,8 @@ def compare_csv_files(file1_path: str,
                       compare_button: tk.Button, 
                       excel_output: bool,
                       index1_identifier: int,
-                      index2_identifier: int):
+                      index2_identifier: int,
+                      output_dir: str):
     def update_progress_bar(progress_value: int) -> None:
         progress_var.set(progress_value)  # Update progress bar value
         root.update_idletasks() # Update the GUI to reflect progress bar change
@@ -36,7 +38,7 @@ def compare_csv_files(file1_path: str,
     if len(res.issue_list) > 0:
         if excel_output:
             update_progress_status('Writing to Excel, if this takes too long, use text.')
-            write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar)
+            write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
         else:
             update_progress_status('Writing to text file, if this takes too long, use text.')
             write_issues(res.issue_list)
@@ -54,16 +56,29 @@ def get_csv_file(file_path_var: tk.StringVar):
     if file_path:
         file_path_var.set(file_path)
 
+def get_directory(file_path_var: tk.StringVar):
+    """
+    Opens a file explorer window and sets the selected file path to the entry widget.
+    """
+    file_path = filedialog.askdirectory()
+    if file_path:
+        file_path_var.set(file_path)
+
 def compare_button_click():
     file1_path = file1_var.get()
     file2_path = file2_var.get()
     index1_identifier = index1_var.get() - 1
     index2_identifier = index2_var.get() - 1
     excel_output = use_excel.get()
+    output_dir = output_dir_var.get()
 
     if file1_path == ""  or file2_path == "":
         output_label.config(text='Please select both CSV files first.')
         return 
+
+    if not ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ): 
+        output_label.config(text='Cannot find files. Please check the file path for both CSVs.')
+        return
     
     # Run comparison in a separate thread
     comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, 
@@ -73,7 +88,8 @@ def compare_button_click():
                                                                          compare_button, 
                                                                          excel_output,
                                                                          index1_identifier,
-                                                                         index2_identifier))
+                                                                         index2_identifier,
+                                                                         output_dir))
     comparison_thread.start()
     return
 
@@ -88,7 +104,7 @@ if __name__ == "__main__":
     # Window and widgets
     root = tk.Tk()
     root.title("CSV Comparison Tool")
-    root.geometry('600x120')
+    root.geometry('600x150')
     use_excel = tk.BooleanVar(value=True)  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
@@ -117,7 +133,7 @@ if __name__ == "__main__":
     index1_textbox = tk.Entry(file1_frame, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate), "%P"))
     index1_textbox.pack(side=tk.LEFT)
 
-    # Frame for first CSV file selection
+    # Frame for second CSV file selection
     file2_frame = tk.Frame(file_selector_frame)
     file2_frame.pack(fill=tk.X, padx=25)
 
@@ -139,6 +155,21 @@ if __name__ == "__main__":
     index2_var.set(1)
     index2_textbox = tk.Entry(file2_frame, textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate), "%P"))
     index2_textbox.pack(side=tk.LEFT)
+
+    # Frame for outfile file location
+    output_dir_frame = tk.Frame(file_selector_frame)
+    output_dir_frame.pack(fill=tk.X, padx=25)
+
+    output_dir_label = tk.Label(output_dir_frame, text="Select output folder:")
+    output_dir_label.pack(side=tk.LEFT)  # Pack label to the left
+
+    output_dir_var = tk.StringVar()
+    output_dir_var.set(f'{os.getcwd()}')
+    output_dir_textbox = tk.Entry(output_dir_frame, textvariable=output_dir_var)
+    output_dir_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
+
+    output_dir_browse_button = tk.Button(output_dir_frame, text="Browse", command=lambda: get_directory(output_dir_var))
+    output_dir_browse_button.pack(side=tk.LEFT)  # Pack button to right
 
     progress_var = tk.IntVar()
     progress_bar = ttk.Progressbar(root, maximum=100, variable=progress_var)

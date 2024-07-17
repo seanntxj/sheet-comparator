@@ -51,6 +51,13 @@ class ISSUES_MAIN:
         self.issue_list.append(issue_item)
         return issue_item
 
+def get_dir(dir: str):
+    if dir == "":
+        return dir
+    if not os.path.isdir(dir): 
+        os.mkdir(dir)
+    return f'{dir}/'
+
 def find_discrepencies(uploaded_file_path: str, 
                        original_file_path: str, 
                        progress_to_show_in_gui = None,
@@ -168,24 +175,26 @@ def write_issues(issues: list[ISSUE_ITEM]):
         original_row = 'ORI |'
         for x, item in enumerate(row.original_row): 
             if x in row.mismatched_columns_indexes:
-                original_row += f' |{item}|'
+                original_row += f' <|{item}|>'
             else:
-                original_row += f' "{item}"'
+                original_row += f' {item}'
         uploaded_row = 'UPL |'
         for x, item in enumerate(row.uploaded_row): 
             if x in row.mismatched_columns_indexes:
-                uploaded_row += f' |{item}|'
+                uploaded_row += f' <|{item}|>'
             else:
-                uploaded_row += f' "{item}"'
+                uploaded_row += f' {item}'
         f.write(f'{original_row}\n')
         f.write(f'{uploaded_row}\n')
         f.write(f'\n')
     f.close()
     return 
 
-def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None) -> None:
+def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None, output_dir: str = "") -> None:
+    output_dir = get_dir(output_dir)
+
     # Create the excel file
-    filename = f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
+    filename = f'{output_dir}issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
     if not os.path.isfile(filename):
         wb = Workbook()
         wb.save(filename)
@@ -193,7 +202,7 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_
 
     for i, item in enumerate(fields):
         item = item.strip().replace("ï»¿", "")
-        sheet.cell(row=1, column=i+1).value = item
+        sheet.cell(row=1, column=i+2).value = item # offset two as the first row is taken up by the original/upload identifier
 
     row_index = 2
     pbar = tqdm(total=len(issues), desc="Inserting into Excel")
@@ -258,6 +267,5 @@ if __name__ == "__main__":
                                  ori_file_name, 
                                  uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
                                  original_file_identifiying_field_index=original_file_identifiying_field_index)
-    write_issues(issues.issue_list)
+    write_issues_to_excel(issues.issue_list, issues.original_fields)
     print(issues.status.value)
-    print(issues.uploaded_fields)
