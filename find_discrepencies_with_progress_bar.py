@@ -119,27 +119,27 @@ def find_discrepencies(uploaded_file_path: str,
     # Check if it exists in the uploaded csv file
     # If it exists, compare that row of values to the original 
     previous_update = 0 # For GUI 
-    with tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows") as pbar:
-        for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
-            if row_from_ori_csv[identifiying_field_index] not in uploaded_hashed_csv:
-                issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[identifiying_field_index], identifiying_field_index)
-                continue
+    pbar = tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows")
+    for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
+        if row_from_ori_csv[identifiying_field_index] not in uploaded_hashed_csv:
+            issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[identifiying_field_index], identifiying_field_index)
+            continue
 
-            row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[identifiying_field_index]]
+        row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[identifiying_field_index]]
 
-            mismatched_fields = []
-            for col_num in range(len(row_from_ori_csv)):
-                if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
-                    mismatched_fields.append(col_num)
-            if len(mismatched_fields) > 0: 
-                issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
-            
-            # GUI and TQDM progress bars
-            pbar.update(1)
-            progress_in_percentage = min( int(row_num / len(uploaded_hashed_csv)*100) + 1, 100)
-            if progress_to_show_in_gui != None and previous_update != progress_in_percentage:
-                progress_to_show_in_gui(progress_in_percentage)
-                previous_update = progress_in_percentage
+        mismatched_fields = []
+        for col_num in range(len(row_from_ori_csv)):
+            if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
+                mismatched_fields.append(col_num)
+        if len(mismatched_fields) > 0: 
+            issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
+        
+        # GUI and TQDM progress bars
+        pbar.update(1)
+        progress_in_percentage = min( int(row_num / len(uploaded_hashed_csv)*100) + 1, 100)
+        if progress_to_show_in_gui != None and previous_update != progress_in_percentage:
+            progress_to_show_in_gui(progress_in_percentage)
+            previous_update = progress_in_percentage
 
     # Close the original csv file, we've read through everything 
     f_ori.close()
@@ -165,24 +165,25 @@ def write_issues(issues: list[ISSUE_ITEM]):
     f.close()
     return 
 
-def write_issues_to_excel(issues: list[ISSUE_ITEM]) -> None:
+def write_issues_to_excel(issues: list[ISSUE_ITEM], progress_bar = None) -> None:
     # Create the excel file
     filename = f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
     if not os.path.isfile(filename):
         wb = Workbook()
         wb.save(filename)
-    
-    sheet = wb.active
+    sheet = wb.active # Create a pointer to the current sheet
 
     row_index = 1
-    for row in issues:
+    pbar = tqdm(total=len(issues), desc="Inserting into Excel")
+    for i, row in enumerate(issues):
+        # Insert the original row, offsetting 1 column to indicate in a new column for the type of row it is
         sheet.cell(row=row_index, column=1).value = 'ORI'
         for x, item in enumerate(row.original_row):
             sheet.cell(row=row_index, column=x+2).value = item
-        for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes): 
+        # Highlight the columns in which the discrepency is found
+        for mismatched_column_index in row.mismatched_columns_indexes: 
             sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
-
-        row_index += 1
+        row_index += 1 # Move to the next row for the uploaded row
 
         sheet.cell(row=row_index, column=1).value = 'UPL'
         for x, item in enumerate(row.uploaded_row):
@@ -190,6 +191,11 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM]) -> None:
         for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes): 
             sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
         row_index += 1
+
+        # Update progress 
+        pbar.update(1)
+        if progress_bar:
+            progress_bar( min( int(i / len(issues)*100) + 1, 100) )
 
     wb.save(filename)
     return 
@@ -206,20 +212,25 @@ def load_mapping_uploaded_to_original():
     return mapping
 
 if __name__ == "__main__": 
-    # Get input parameters, if not use default name
+    # Get input parameters, if not use default names and column index for identifier
     try:
         name_of_script = sys.argv[0]
         ori_file_name = sys.argv[1]
         uploaded_file_name = sys.argv[2]
     except: 
-        print(f'Using default filenames ori.csv and uploaded.csv\n\n')
+        print(f'Using default filenames ori.csv and uploaded.csv with column index 0 as identifier\n\n')
         ori_file_name = 'ori.csv'
         uploaded_file_name = 'uploaded.csv'
+    try: 
+        identifiying_field_index = int(sys.argv[3])
+    except:
+        identifiying_field_index = 0 
 
     # Give error and quit script if files cannot be found
     if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
         raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
 
-    issues = find_discrepencies(uploaded_file_name, ori_file_name)
+    
+    issues = find_discrepencies(uploaded_file_name, ori_file_name, identifiying_field_index)
     write_issues_to_excel(issues.issue_list)
     print(issues.status.value)
