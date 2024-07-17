@@ -41,7 +41,7 @@ def compare_csv_files(file1_path: str,
             write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
         else:
             update_progress_status('Writing to text file, if this takes too long, use text.')
-            write_issues(res.issue_list)
+            write_issues(res.issue_list, output_dir=output_dir)
 
     update_progress_status(res.status.value)
     compare_button.config(state=tk.NORMAL)

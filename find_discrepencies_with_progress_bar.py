@@ -169,8 +169,10 @@ def find_discrepencies(uploaded_file_path: str,
         status_to_show_in_gui(issues.status.value)
     return issues
 
-def write_issues(issues: list[ISSUE_ITEM]):
-    f = open(f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
+def write_issues(issues: list[ISSUE_ITEM], output_dir: str = ""):
+    output_dir = get_dir(output_dir)
+
+    f = open(f'{output_dir}issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
     for row in issues:
         original_row = 'ORI |'
         for x, item in enumerate(row.original_row): 
