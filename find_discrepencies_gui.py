@@ -104,11 +104,12 @@ if __name__ == "__main__":
     # Window and widgets
     root = tk.Tk()
     root.title("CSV Comparison Tool")
-    root.geometry('600x150')
+    root.geometry('600x170')
+    root.resizable(0,0)
     use_excel = tk.BooleanVar(value=True)  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
-    file_selector_frame.pack(fill=tk.X)
+    file_selector_frame.pack(fill=tk.X, pady=10)
 
     # Frame for first CSV file selection
     file1_frame = tk.Frame(file_selector_frame)
@@ -130,7 +131,7 @@ if __name__ == "__main__":
 
     index1_var = tk.IntVar()
     index1_var.set(1)
-    index1_textbox = tk.Entry(file1_frame, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate), "%P"))
+    index1_textbox = tk.Entry(file1_frame, width=5, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate), "%P"))
     index1_textbox.pack(side=tk.LEFT)
 
     # Frame for second CSV file selection
@@ -153,7 +154,7 @@ if __name__ == "__main__":
 
     index2_var = tk.IntVar()
     index2_var.set(1)
-    index2_textbox = tk.Entry(file2_frame, textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate), "%P"))
+    index2_textbox = tk.Entry(file2_frame, width=5,textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate), "%P"))
     index2_textbox.pack(side=tk.LEFT)
 
     # Frame for outfile file location

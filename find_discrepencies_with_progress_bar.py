@@ -269,5 +269,5 @@ if __name__ == "__main__":
                                  ori_file_name, 
                                  uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
                                  original_file_identifiying_field_index=original_file_identifiying_field_index)
-    write_issues_to_excel(issues.issue_list, issues.original_fields)
+    write_issues(issues.issue_list)
     print(issues.status.value)
