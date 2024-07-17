@@ -61,11 +61,18 @@ def compare_button_click():
     comparison_thread.start()
     return
 
+def validate(P):
+  """Validates input to ensure only numbers are entered."""
+  if P.isdigit() or P == "":
+    return True
+  else:
+    return False
+
 if __name__ == "__main__":
     # Window and widgets
     root = tk.Tk()
     root.title("CSV Comparison Tool")
-    root.geometry('800x120')
+    root.geometry('600x120')
     use_excel = tk.BooleanVar(value=True)  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
@@ -84,21 +91,38 @@ if __name__ == "__main__":
     file1_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
     file1_browse_button = tk.Button(file1_frame, text="Browse", command=lambda: get_csv_file(file1_var))
-    file1_browse_button.pack(side=tk.RIGHT)  # Pack button to right
+    file1_browse_button.pack(side=tk.LEFT)  # Pack button to right
 
+    index1_label = tk.Label(file1_frame, text="Index:")
+    index1_label.pack(side=tk.LEFT, padx=10)  
+
+    index1_var = tk.IntVar()
+    index1_var.set(1)
+    index1_textbox = tk.Entry(file1_frame, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate), "%P"))
+    index1_textbox.pack(side=tk.LEFT)
+
+    # Frame for first CSV file selection
     file2_frame = tk.Frame(file_selector_frame)
     file2_frame.pack(fill=tk.X, padx=25)
 
     file2_label = tk.Label(file2_frame, text="Select uploaded CSV file:")
-    file2_label.pack(side=tk.LEFT)
+    file2_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file2_var = tk.StringVar()
     file2_var.set('uploaded.csv')
     file2_textbox = tk.Entry(file2_frame, textvariable=file2_var)
-    file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)
+    file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
     file2_browse_button = tk.Button(file2_frame, text="Browse", command=lambda: get_csv_file(file2_var))
-    file2_browse_button.pack(side=tk.RIGHT)
+    file2_browse_button.pack(side=tk.LEFT)  # Pack button to right
+
+    index2_label = tk.Label(file2_frame, text="Index:")
+    index2_label.pack(side=tk.LEFT, padx=10)  
+
+    index2_var = tk.IntVar()
+    index2_var.set(1)
+    index2_textbox = tk.Entry(file2_frame, textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate), "%P"))
+    index2_textbox.pack(side=tk.LEFT)
 
     progress_var = tk.IntVar()
     progress_bar = ttk.Progressbar(root, maximum=100, variable=progress_var)
