@@ -36,7 +36,7 @@ def compare_csv_files(file1_path: str,
     if len(res.issue_list) > 0:
         if excel_output:
             update_progress_status('Writing to Excel, if this takes too long, use text.')
-            write_issues_to_excel(res.issue_list, update_progress_bar)
+            write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar)
         else:
             update_progress_status('Writing to text file, if this takes too long, use text.')
             write_issues(res.issue_list)

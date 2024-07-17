@@ -29,9 +29,11 @@ class ISSUE_ITEM:
         self.mismatched_columns_indexes = mismatched_columns_indexes
     
 class ISSUES_MAIN:
-    def __init__(self, status: NATURE_OF_ISSUES = NATURE_OF_ISSUES.OK, issue_list: list[ISSUE_ITEM] = []) -> None:
-        self.status = status
-        self.issue_list = issue_list
+    def __init__(self) -> None:
+        self.status = NATURE_OF_ISSUES.OK
+        self.issue_list: list[ISSUES_MAIN] = []
+        self.uploaded_fields: list[str] = []
+        self.original_fields: list[str] = []
         
     def insert_issue_missing_uploaded_row(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0):
         row_to_indicate_missing_row = []
@@ -85,7 +87,11 @@ def find_discrepencies(uploaded_file_path: str,
     fields_ori_csv = next(ori_csv_reader)
 
     # Initialise issues custom class to hold all the found issues (if any)
-    issues = ISSUES_MAIN(status=NATURE_OF_ISSUES.OK, issue_list=[])
+    issues = ISSUES_MAIN()
+
+    # Save the fields for later use 
+    issues.original_fields = fields_ori_csv
+    issues.uploaded_fields = fields_uploaded_csv
 
     # Checking if every field in the original csv exists in the uploaded csv - If failed will not proceed with rest of check, return issue log immediately
     mismatched_fields = []
@@ -177,7 +183,7 @@ def write_issues(issues: list[ISSUE_ITEM]):
     f.close()
     return 
 
-def write_issues_to_excel(issues: list[ISSUE_ITEM], progress_bar = None) -> None:
+def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None) -> None:
     # Create the excel file
     filename = f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
     if not os.path.isfile(filename):
@@ -185,7 +191,11 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM], progress_bar = None) -> None
         wb.save(filename)
     sheet = wb.active # Create a pointer to the current sheet
 
-    row_index = 1
+    for i, item in enumerate(fields):
+        item = item.strip().replace("ï»¿", "")
+        sheet.cell(row=1, column=i+1).value = item
+
+    row_index = 2
     pbar = tqdm(total=len(issues), desc="Inserting into Excel")
     for i, row in enumerate(issues):
         # Insert the original row, offsetting 1 column to indicate in a new column for the type of row it is
@@ -250,3 +260,4 @@ if __name__ == "__main__":
                                  original_file_identifiying_field_index=original_file_identifiying_field_index)
     write_issues(issues.issue_list)
     print(issues.status.value)
+    print(issues.uploaded_fields)
