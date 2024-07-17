@@ -1,1 +1,1 @@
-python -m nuitka --standalone --onefile --enable-plugin=tk-inter --windows-console-mode=disable find_discrepencies_gui.py
+python -m nuitka --windows-icon-from-ico=icon.ico --standalone --onefile --enable-plugin=tk-inter --windows-console-mode=disable find_discrepencies_gui.py
