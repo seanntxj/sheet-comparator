@@ -158,10 +158,21 @@ def find_discrepencies(uploaded_file_path: str,
 
 def write_issues(issues: list[ISSUE_ITEM]):
     f = open(f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
-    for item in issues:
-        f.write(f'ORI | {item.original_row}\n')
-        f.write(f'UPL | {item.uploaded_row}\n')
-        f.write(f'{item.mismatched_columns_indexes}\n')
+    for row in issues:
+        original_row = 'ORI |'
+        for x, item in enumerate(row.original_row): 
+            if x in row.mismatched_columns_indexes:
+                original_row += f' |{item}|'
+            else:
+                original_row += f' "{item}"'
+        uploaded_row = 'UPL |'
+        for x, item in enumerate(row.uploaded_row): 
+            if x in row.mismatched_columns_indexes:
+                uploaded_row += f' |{item}|'
+            else:
+                uploaded_row += f' "{item}"'
+        f.write(f'{original_row}\n')
+        f.write(f'{uploaded_row}\n')
         f.write(f'\n')
     f.close()
     return 
