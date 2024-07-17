@@ -10,14 +10,13 @@ Download from any of the completed builds.
 ### Prerequisites
 
 Two CSV files with the exact same columns and order which may have discrepencies in their contents.
-- [original.csv](https://www.example.com)
-- [potentially_corrupted_original.csv](https://www.example.com)
+- [customers.csv](https://www.datablist.com/learn/csv/download-sample-csv-files)
 
 ## Credits
 
-  - [Nuitka](https://www.example.com) - Used for compiling 
-  - [openpyxl](https://www.example.com) - Exporting to Excel
-  - [tkinter](www.example.com) - GUI
+  - [Nuitka](https://github.com/Nuitka/Nuitka) - Used for compiling 
+  - [openpyxl](https://foss.heptapod.net/openpyxl/openpyxl) - Exporting to Excel
+  - [tkinter](https://docs.python.org/3/library/tkinter.html) - GUI
   - [Flaticon](https://www.flaticon.com/free-icons/comparison) - Comparison icon
 
 ## Authors

@@ -170,6 +170,9 @@ def find_discrepencies(uploaded_file_path: str,
     return issues
 
 def write_issues(issues: list[ISSUE_ITEM], output_dir: str = ""):
+    if len(issues) == 0:
+        return
+
     output_dir = get_dir(output_dir)
 
     f = open(f'{output_dir}issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
@@ -193,6 +196,9 @@ def write_issues(issues: list[ISSUE_ITEM], output_dir: str = ""):
     return 
 
 def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None, output_dir: str = "") -> None:
+    if len(issues) == 0:
+        return 
+
     output_dir = get_dir(output_dir)
 
     # Create the excel file
