@@ -53,7 +53,8 @@ def find_discrepencies(uploaded_file_path: str,
                        original_file_path: str, 
                        progress_to_show_in_gui = None,
                        status_to_show_in_gui = None,
-                       identifiying_field_index: int = 0) -> ISSUES_MAIN:
+                       uploaded_file_identifiying_field_index: int = 0,
+                       original_file_identifiying_field_index: int = 0) -> ISSUES_MAIN:
     """
     Finds the difference between two CSV files. 
 
@@ -106,7 +107,7 @@ def find_discrepencies(uploaded_file_path: str,
     # Hash the uploaded csv file based on its key value
     uploaded_hashed_csv = {}
     for row in uploaded_csv_reader:
-        uploaded_hashed_csv[row[identifiying_field_index]] = row
+        uploaded_hashed_csv[row[uploaded_file_identifiying_field_index]] = row
 
     # Close the uploaded csv file, it's no longer needed as its now been hashed into memory
     f_uploaded.close()
@@ -121,11 +122,11 @@ def find_discrepencies(uploaded_file_path: str,
     previous_update = 0 # For GUI 
     pbar = tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows")
     for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
-        if row_from_ori_csv[identifiying_field_index] not in uploaded_hashed_csv:
-            issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[identifiying_field_index], identifiying_field_index)
+        if row_from_ori_csv[original_file_identifiying_field_index] not in uploaded_hashed_csv:
+            issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[original_file_identifiying_field_index], original_file_identifiying_field_index)
             continue
 
-        row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[identifiying_field_index]]
+        row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[original_file_identifiying_field_index]]
 
         mismatched_fields = []
         for col_num in range(len(row_from_ori_csv)):
@@ -222,15 +223,19 @@ if __name__ == "__main__":
         ori_file_name = 'ori.csv'
         uploaded_file_name = 'uploaded.csv'
     try: 
-        identifiying_field_index = int(sys.argv[3])
+        uploaded_file_identifiying_field_index = int(sys.argv[3])
+        original_file_identifiying_field_index = int(sys.argv[4])
     except:
-        identifiying_field_index = 0 
+        uploaded_file_identifiying_field_index = 0
+        original_file_identifiying_field_index = 0
 
     # Give error and quit script if files cannot be found
     if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
         raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
-
     
-    issues = find_discrepencies(uploaded_file_name, ori_file_name, identifiying_field_index)
-    write_issues_to_excel(issues.issue_list)
+    issues = find_discrepencies(uploaded_file_name,
+                                 ori_file_name, 
+                                 uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
+                                 original_file_identifiying_field_index=original_file_identifiying_field_index)
+    write_issues(issues.issue_list)
     print(issues.status.value)
