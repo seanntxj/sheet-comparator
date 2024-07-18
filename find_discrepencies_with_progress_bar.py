@@ -11,7 +11,7 @@ Assumptions:
 import csv 
 import sys
 import os.path
-from tqdm import tqdm
+# from tqdm import tqdm
 import time
 from enum import Enum
 from openpyxl import Workbook, styles
@@ -133,7 +133,7 @@ def find_discrepencies(uploaded_file_path: str,
     # Check if it exists in the uploaded csv file
     # If it exists, compare that row of values to the original 
     previous_update = 0 # For GUI 
-    pbar = tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows")
+    # pbar = tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows")
     for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
         if row_from_ori_csv[original_file_identifiying_field_index] not in uploaded_hashed_csv:
             issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[original_file_identifiying_field_index], original_file_identifiying_field_index)
@@ -149,7 +149,7 @@ def find_discrepencies(uploaded_file_path: str,
             issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
         
         # GUI and TQDM progress bars
-        pbar.update(1)
+        # pbar.update(1)
         progress_in_percentage = min( int(row_num / len(uploaded_hashed_csv)*100) + 1, 100)
         if progress_to_show_in_gui != None and previous_update != progress_in_percentage:
             progress_to_show_in_gui(progress_in_percentage)
@@ -213,7 +213,7 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_
         sheet.cell(row=1, column=i+2).value = item # offset two as the first row is taken up by the original/upload identifier
 
     row_index = 2
-    pbar = tqdm(total=len(issues), desc="Inserting into Excel")
+    # pbar = tqdm(total=len(issues), desc="Inserting into Excel")
     for i, row in enumerate(issues):
         # Insert the original row, offsetting 1 column to indicate in a new column for the type of row it is
         sheet.cell(row=row_index, column=1).value = 'ORI'
@@ -232,7 +232,7 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_
         row_index += 1
 
         # Update progress 
-        pbar.update(1)
+        # pbar.update(1)
         if progress_bar:
             progress_bar( min( int(i / len(issues)*100) + 1, 100) )
 
@@ -249,6 +249,34 @@ def load_mapping_uploaded_to_original():
         mapping[original] = uploaded
         mapping[uploaded] = original
     return mapping
+
+def compare_csv_folders(uploaded_folder_path: str, 
+                       original_folder_path: str, 
+                       progress_to_show_in_gui = None,
+                       status_to_show_in_gui = None,
+                       uploaded_file_identifiying_field_index: int = 0,
+                       original_file_identifiying_field_index: int = 0) -> list[ISSUES_MAIN]:
+    
+    uploaded_file_names = [item for item in os.listdir(uploaded_folder_path) if item.endswith('.csv')]   
+    original_file_names = [item for item in os.listdir(original_folder_path) if item.endswith('.csv')]
+    original_file_names_hash = {} 
+    
+    for item in original_file_names:
+        original_file_names_hash[item.split('_')[0]] =  f'{original_folder_path}/{item}'
+
+    issues_list: list[ISSUES_MAIN] = []
+    
+    for i, uploaded_file_name in enumerate(uploaded_file_names):
+        uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
+        original_file_path = f'{original_folder_path}/{original_file_names_hash[uploaded_file_name.split("_")[0]]}'
+
+        status_to_show_in_gui(f'Processing file {uploaded_file_name}')
+        issues_list.append(find_discrepencies(uploaded_file_path=uploaded_file_path,
+                           original_file_path=original_file_path,
+                           uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
+                           original_file_identifiying_field_index=original_file_identifiying_field_index))
+
+    return issues_list
 
 if __name__ == "__main__": 
     # Get input parameters, if not use default names and column index for identifier

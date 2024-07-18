@@ -4,7 +4,7 @@ from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
 import os
-from find_discrepencies_with_progress_bar import find_discrepencies, write_issues, write_issues_to_excel
+from find_discrepencies_with_progress_bar import find_discrepencies, write_issues, write_issues_to_excel, compare_csv_folders
 
 TESTING = False
 
@@ -48,6 +48,47 @@ def compare_csv_files(file1_path: str,
     progress_var.set(100)
     return
 
+def compare_csv_folder(folder1_path: str, 
+                      folder2_path: str, 
+                      progress_var: tk.IntVar, 
+                      output_label: tk.Label, 
+                      compare_button: tk.Button, 
+                      excel_output: bool,
+                      index1_identifier: int,
+                      index2_identifier: int,
+                      output_dir: str):
+    def update_progress_bar(progress_value: int) -> None:
+        progress_var.set(progress_value)  # Update progress bar value
+        root.update_idletasks() # Update the GUI to reflect progress bar change
+    
+    def update_progress_status(status: str) -> None:
+        output_label.config(text=f'{" "*500}')
+        output_label.config(text=status)
+        root.update_idletasks() # Update the GUI to reflect progress bar change
+
+    compare_button.config(state=tk.DISABLED)
+
+    if TESTING: # Simulate some progress for demonstration
+        for i in range(100):
+            update_progress_bar(i + 1) 
+            time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
+    else: # Run actual comparison
+        res = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
+
+    # if len(res.issue_list) > 0:
+    #     if excel_output:
+    #         update_progress_status('Writing to Excel, if this takes too long, use text.')
+    #         write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
+    #     else:
+    #         update_progress_status('Writing to text file, if this takes too long, use text.')
+    #         write_issues(res.issue_list, output_dir=output_dir)
+
+    update_progress_status(res.status.value)
+    compare_button.config(state=tk.NORMAL)
+    progress_var.set(100)
+    return
+
+
 def get_csv_file(file_path_var: tk.StringVar):
     """
     Opens a file explorer window and sets the selected file path to the entry widget.
@@ -76,22 +117,35 @@ def compare_button_click():
         output_label.config(text='Please select both CSV files first.')
         return 
 
-    if not ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ): 
+    if not ( ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ) or ( os.path.isdir(file1_path) and os.path.isdir(file2_path) ) ): 
         output_label.config(text='Cannot find files. Please check the file path for both CSVs.')
         return
     
-    # Run comparison in a separate thread
-    comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, 
-                                                                         file2_path, 
-                                                                         progress_var, 
-                                                                         output_label, 
-                                                                         compare_button, 
-                                                                         excel_output,
-                                                                         index1_identifier,
-                                                                         index2_identifier,
-                                                                         output_dir))
-    comparison_thread.start()
-    return
+    if ( os.path.isdir(file1_path) and os.path.isdir(file2_path) ):
+        comparison_thread = threading.Thread(target=compare_csv_folder, args=(file1_path, 
+                                                                    file2_path, 
+                                                                    progress_var, 
+                                                                    output_label, 
+                                                                    compare_button, 
+                                                                    excel_output,
+                                                                    index1_identifier,
+                                                                    index2_identifier,
+                                                                    output_dir))
+        return
+    
+    if ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ):
+        # Run comparison in a separate thread
+        comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, 
+                                                                            file2_path, 
+                                                                            progress_var, 
+                                                                            output_label, 
+                                                                            compare_button, 
+                                                                            excel_output,
+                                                                            index1_identifier,
+                                                                            index2_identifier,
+                                                                            output_dir))
+        comparison_thread.start()
+        return
 
 def validate(P):
   """Validates input to ensure only numbers are entered."""
