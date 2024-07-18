@@ -123,8 +123,11 @@ if __name__ == "__main__":
     file1_textbox = tk.Entry(file1_frame, textvariable=file1_var)
     file1_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
-    file1_browse_button = tk.Button(file1_frame, text="Browse", command=lambda: get_csv_file(file1_var))
-    file1_browse_button.pack(side=tk.LEFT)  # Pack button to right
+    file1_browse_button = tk.Button(file1_frame, text="File", command=lambda: get_csv_file(file1_var))
+    file1_browse_button.pack(side=tk.LEFT)  
+
+    file1_browse_folder_button = tk.Button(file1_frame, text="Folder", command=lambda: get_directory(file1_var))
+    file1_browse_folder_button.pack(side=tk.LEFT)  
 
     index1_label = tk.Label(file1_frame, text="Index:")
     index1_label.pack(side=tk.LEFT, padx=10)  
@@ -146,8 +149,11 @@ if __name__ == "__main__":
     file2_textbox = tk.Entry(file2_frame, textvariable=file2_var)
     file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
-    file2_browse_button = tk.Button(file2_frame, text="Browse", command=lambda: get_csv_file(file2_var))
+    file2_browse_button = tk.Button(file2_frame, text="File", command=lambda: get_csv_file(file2_var))
     file2_browse_button.pack(side=tk.LEFT)  # Pack button to right
+
+    file2_browse_folder_button = tk.Button(file2_frame, text="Folder", command=lambda: get_directory(file2_var))
+    file2_browse_folder_button.pack(side=tk.LEFT)  
 
     index2_label = tk.Label(file2_frame, text="Index:")
     index2_label.pack(side=tk.LEFT, padx=10)  
