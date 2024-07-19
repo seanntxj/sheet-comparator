@@ -7,6 +7,8 @@ import os
 from find_discrepencies import find_discrepencies, write_issues, write_issues_to_excel, compare_csv_folders, write_multiple_issues
 
 TESTING = False
+DEFAULT_ORI = 'ori.csv'
+DEFAULT_UPL = 'upl2.csv'
 
 def compare_csv_files(file1_path: str, 
                       file2_path: str, 
@@ -43,7 +45,12 @@ def compare_csv_files(file1_path: str,
             update_progress_status('Writing to text file.')
             write_issues(res.issue_list, output_dir=output_dir, name=res.name)
 
-    update_progress_status(res.status.value)
+    # Update status
+    if res.has_issues():
+        update_progress_status(f"Discrepencies found: {res.name}")
+    else: 
+        update_progress_status(f"Clear: {res.name}")
+        
     compare_button.config(state=tk.NORMAL)
     progress_var.set(100)
     return
@@ -161,7 +168,7 @@ if __name__ == "__main__":
     file1_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file1_var = tk.StringVar()
-    file1_var.set('ori.csv')
+    file1_var.set(DEFAULT_ORI)
     file1_textbox = tk.Entry(file1_frame, textvariable=file1_var)
     file1_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
@@ -187,7 +194,7 @@ if __name__ == "__main__":
     file2_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file2_var = tk.StringVar()
-    file2_var.set('uploaded.csv')
+    file2_var.set(DEFAULT_UPL)
     file2_textbox = tk.Entry(file2_frame, textvariable=file2_var)
     file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 

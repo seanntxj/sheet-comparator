@@ -23,19 +23,31 @@ class NATURE_OF_ISSUES(Enum):
     FIELDS_LENGTH_MISMATCH = "The number of columns in each csv file don't match. Please check for any trailing commas with notepad."
     
 class ISSUE_ITEM:
-    def __init__(self, original_row: list, uploaded_row: list, mismatched_columns_indexes: list) -> None:
+    def __init__(self, original_row: list, uploaded_row: list, mismatched_columns_indexes: list, mismatched_columns_indexes_upl: list) -> None:
         self.original_row = original_row
         self.uploaded_row = uploaded_row
         self.mismatched_columns_indexes = mismatched_columns_indexes
+        self.mismatched_columns_indexes_upl = mismatched_columns_indexes_upl
     
 class ISSUES_MAIN:
     def __init__(self) -> None:
-        self.status = NATURE_OF_ISSUES.OK
+        self.nature_of_issues: list[NATURE_OF_ISSUES] = [] 
         self.name = ""
         self.issue_list: list[ISSUES_MAIN] = []
         self.uploaded_fields: list[str] = []
         self.original_fields: list[str] = []
-        
+        self.uploaded_hashed_fields_idxs: dict = {} #original field: uploaded field index 
+
+    def has_issues(self) -> bool:
+        return len(self.nature_of_issues) > 0 
+    
+    def update_uploaded_hashed_fields_idxs(self) -> dict:
+        for ori_field in self.original_fields:
+            for upl_field_idx, upl_field in enumerate(self.uploaded_fields):
+                if upl_field == ori_field:
+                    self.uploaded_hashed_fields_idxs[ori_field] = upl_field_idx
+        return self.uploaded_hashed_fields_idxs
+    
     def insert_issue_missing_uploaded_row(self, original_row: list, value_of_identifier: str, column_of_identifier: int = 0):
         row_to_indicate_missing_row = []
         for i in range(len(original_row)):
@@ -43,12 +55,15 @@ class ISSUES_MAIN:
                 row_to_indicate_missing_row.append('MISSING')
             else: 
                 row_to_indicate_missing_row.append(value_of_identifier)
-        issue_item = ISSUE_ITEM(original_row, row_to_indicate_missing_row, [column_of_identifier])
+        issue_item = ISSUE_ITEM(original_row, row_to_indicate_missing_row, [column_of_identifier], [column_of_identifier])
         self.issue_list.append(issue_item)
         return issue_item
 
-    def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepency_is_found: list):
-        issue_item = ISSUE_ITEM(original_row, uploaded_row, columns_where_discrepency_is_found)
+    def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepency_is_found: list[int]):
+        columns_where_discrepency_is_found_upl = []
+        for column_idx in columns_where_discrepency_is_found:
+            columns_where_discrepency_is_found_upl.append(self.uploaded_hashed_fields_idxs[self.original_fields[column_idx]])
+        issue_item = ISSUE_ITEM(original_row, uploaded_row, columns_where_discrepency_is_found, columns_where_discrepency_is_found_upl)
         self.issue_list.append(issue_item)
         return issue_item
 
@@ -105,13 +120,11 @@ def find_discrepencies(uploaded_file_path: str,
     mismatched_fields = []
     for i in range(len(fields_ori_csv)):
         if fields_ori_csv[i] not in fields_uploaded_csv:
-            issues.status = NATURE_OF_ISSUES.FIELDS_MISMATCH
+            issues.nature_of_issues.append(NATURE_OF_ISSUES.FIELDS_MISMATCH)
             mismatched_fields.append(i)
-    if issues.status == NATURE_OF_ISSUES.FIELDS_MISMATCH: 
+    if NATURE_OF_ISSUES.FIELDS_MISMATCH in issues.nature_of_issues: 
         issues.insert_issue(fields_ori_csv, fields_uploaded_csv, mismatched_fields)
-        return issues
-    if len(fields_ori_csv) != len(fields_uploaded_csv): 
-        issues.status = NATURE_OF_ISSUES.FIELDS_LENGTH_MISMATCH
+        # TODO Toggle for checking regardless of fields being mismatched
         return issues
     
     # Update status
@@ -122,6 +135,9 @@ def find_discrepencies(uploaded_file_path: str,
     uploaded_hashed_csv = {}
     for row in uploaded_csv_reader:
         uploaded_hashed_csv[row[uploaded_file_identifiying_field_index]] = row
+    
+    # Hash the indexs of the uploaded csv fields
+    uploaded_hashed_fields_index = issues.update_uploaded_hashed_fields_idxs()
 
     # Close the uploaded csv file, it's no longer needed as its now been hashed into memory
     f_uploaded.close()
@@ -135,6 +151,8 @@ def find_discrepencies(uploaded_file_path: str,
     # If it exists, compare that row of values to the original 
     previous_update = 0 # For GUI 
     # pbar = tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows")
+
+    # Each ROW 
     for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
         if row_from_ori_csv[original_file_identifiying_field_index] not in uploaded_hashed_csv:
             issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[original_file_identifiying_field_index], original_file_identifiying_field_index)
@@ -143,8 +161,15 @@ def find_discrepencies(uploaded_file_path: str,
         row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[original_file_identifiying_field_index]]
 
         mismatched_fields = []
-        for col_num in range(len(row_from_ori_csv)):
-            if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
+        # for col_num in range(len(row_from_ori_csv)):
+        #     if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
+        #         mismatched_fields.append(col_num)
+
+        # Each COLUMN (CELL)
+        for col_num in range(len(fields_ori_csv)):
+            cell_from_ori_csv = row_from_ori_csv[col_num]
+            cell_from_upl_csv = row_from_uploaded_csv[uploaded_hashed_fields_index[fields_ori_csv[col_num]]]
+            if cell_from_ori_csv != cell_from_upl_csv:
                 mismatched_fields.append(col_num)
         if len(mismatched_fields) > 0: 
             issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
@@ -155,19 +180,13 @@ def find_discrepencies(uploaded_file_path: str,
         if progress_to_show_in_gui != None and previous_update != progress_in_percentage:
             progress_to_show_in_gui(progress_in_percentage)
             previous_update = progress_in_percentage
+    
+    # Mark issues found 
+    if len(issues.issue_list): issues.nature_of_issues.append(NATURE_OF_ISSUES.DISCREPENCY)  
 
     # Close the original csv file, we've read through everything 
     f_ori.close()
 
-    # Write the issues into an excel file and return the issue log
-    if len(issues.issue_list) == 0: 
-        issues.status = NATURE_OF_ISSUES.OK
-    else: 
-        issues.status = NATURE_OF_ISSUES.DISCREPENCY
-
-    # Update status
-    if status_to_show_in_gui:
-        status_to_show_in_gui(issues.status.value)
     return issues
 
 def write_issues(issues: list[ISSUE_ITEM], output_dir: str = "", name: str = ""):
@@ -186,7 +205,7 @@ def write_issues(issues: list[ISSUE_ITEM], output_dir: str = "", name: str = "")
                 original_row += f' {item}'
         uploaded_row = 'UPL |'
         for x, item in enumerate(row.uploaded_row): 
-            if x in row.mismatched_columns_indexes:
+            if x in row.mismatched_columns_indexes_upl:
                 uploaded_row += f' <|{item}|>'
             else:
                 uploaded_row += f' {item}'
@@ -228,7 +247,7 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_
         sheet.cell(row=row_index, column=1).value = 'UPL'
         for x, item in enumerate(row.uploaded_row):
             sheet.cell(row=row_index, column=x+2).value = item
-        for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes): 
+        for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes_upl): 
             sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
         row_index += 1
 
@@ -315,4 +334,3 @@ if __name__ == "__main__":
                                  uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
                                  original_file_identifiying_field_index=original_file_identifiying_field_index)
     write_issues(issues.issue_list)
-    print(issues.status.value)
