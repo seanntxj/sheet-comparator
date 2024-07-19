@@ -10,75 +10,44 @@ TESTING = False
 DEFAULT_ORI = 'ori_test'
 DEFAULT_UPL = 'upl_test'
 
-def compare_csv_files(file1_path: str, 
-                      file2_path: str, 
-                      progress_var: tk.IntVar, 
-                      output_label: tk.Label, 
+def update_progress_bar(progress_value: int) -> None:
+    progress_var.set(progress_value)  # Update progress bar value
+    root.update_idletasks() # Update the GUI to reflect progress bar change
+
+def update_progress_status(status: str) -> None:
+    output_label.config(text=f'{" "*500}')
+    output_label.config(text=status)
+    root.update_idletasks() # Update the GUI to reflect progress bar change
+
+def compare_csvs_aux(item1_path: str, 
+                      item2_path: str, 
                       compare_button: tk.Button, 
                       excel_output: bool,
                       index1_identifier: int,
                       index2_identifier: int,
-                      output_dir: str):
-    def update_progress_bar(progress_value: int) -> None:
-        progress_var.set(progress_value)  # Update progress bar value
-        root.update_idletasks() # Update the GUI to reflect progress bar change
-    
-    def update_progress_status(status: str) -> None:
-        output_label.config(text=f'{" "*500}')
-        output_label.config(text=status)
-        root.update_idletasks() # Update the GUI to reflect progress bar change
-
+                      output_dir: str) -> None: 
+    # Disable the compare button to prevent spamming
     compare_button.config(state=tk.DISABLED)
 
-    if TESTING: # Simulate some progress for demonstration
-        for i in range(100):
-            update_progress_bar(i + 1) 
-            time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
-    else: # Run actual comparison
-        res = find_discrepencies(file2_path, file1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
+    # Run bulk logic if its a folder path being provided 
+    if ( os.path.isdir(item1_path) and os.path.isdir(item2_path) ):
+        res = compare_csv_folders(uploaded_folder_path=item2_path,
+                            original_folder_path=item1_path,
+                            progress_to_show_in_gui=update_progress_bar,
+                            status_to_show_in_gui=update_progress_status,
+                            uploaded_file_identifiying_field_index=index2_identifier,
+                            original_file_identifiying_field_index=index1_identifier)
+        write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
 
-    write_issues(res, output_dir=output_dir, use_excel=excel_output, progress_bar=update_progress_bar, progress_status=update_progress_status)
-
-    # Update status
-    if res.has_issues():
-        update_progress_status(f"Discrepencies found: {res.name}")
-    else: 
-        update_progress_status(f"Clear: {res.name}")
-        
-    compare_button.config(state=tk.NORMAL)
-    progress_var.set(100)
-    return
-
-def compare_csv_folder(folder1_path: str, 
-                      folder2_path: str, 
-                      progress_var: tk.IntVar, 
-                      output_label: tk.Label, 
-                      compare_button: tk.Button, 
-                      excel_output: bool,
-                      index1_identifier: int,
-                      index2_identifier: int,
-                      output_dir: str):
-    def update_progress_bar(progress_value: int) -> None:
-        progress_var.set(progress_value)  # Update progress bar value
-        root.update_idletasks() # Update the GUI to reflect progress bar change
-    
-    def update_progress_status(status: str) -> None:
-        output_label.config(text=f'{" "*500}')
-        output_label.config(text=status)
-        root.update_idletasks() # Update the GUI to reflect progress bar change
-
-    compare_button.config(state=tk.DISABLED)
-
-    if TESTING: # Simulate some progress for demonstration
-        for i in range(100):
-            update_progress_bar(i + 1) 
-            time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
-    else: # Run actual comparison
-        try:
-            res_list = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
-            write_multiple_issues(res_list, update_progress_bar, output_dir, excel_output)
-        except KeyError as e: 
-            update_progress_status(f'Cannot find the matching file for {e.args[0]}')
+    # Run single file logic if its a file path being provided
+    if ( os.path.isfile(item1_path) and os.path.isfile(item2_path) ):
+        res = find_discrepencies(uploaded_file_path=item2_path,
+                                 original_file_path=item1_path,
+                                 progress_to_show_in_gui=update_progress_bar,
+                                 status_to_show_in_gui=update_progress_status,
+                                 uploaded_file_identifiying_field_index=index2_identifier,
+                                 original_file_identifiying_field_index=index1_identifier)
+        write_issues(res, output_dir, excel_output, update_progress_bar, update_progress_status)
 
     compare_button.config(state=tk.NORMAL)
     progress_var.set(100)
@@ -115,29 +84,15 @@ def compare_button_click():
     if not ( ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ) or ( os.path.isdir(file1_path) and os.path.isdir(file2_path) ) ): 
         output_label.config(text='Cannot find files. Please check the file path for both CSVs.')
         return
+
+    comparison_thread = threading.Thread(target=compare_csvs_aux, args=(file1_path, 
+                                                                file2_path, 
+                                                                compare_button, 
+                                                                excel_output, 
+                                                                index1_identifier,
+                                                                index2_identifier,
+                                                                output_dir))
     
-    if ( os.path.isdir(file1_path) and os.path.isdir(file2_path) ):
-        comparison_thread = threading.Thread(target=compare_csv_folder, args=(file1_path, 
-                                                                    file2_path, 
-                                                                    progress_var, 
-                                                                    output_label, 
-                                                                    compare_button, 
-                                                                    excel_output,
-                                                                    index1_identifier,
-                                                                    index2_identifier,
-                                                                    output_dir))
-    
-    if ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ):
-        # Run comparison in a separate thread
-        comparison_thread = threading.Thread(target=compare_csv_files, args=(file1_path, 
-                                                                            file2_path, 
-                                                                            progress_var, 
-                                                                            output_label, 
-                                                                            compare_button, 
-                                                                            excel_output,
-                                                                            index1_identifier,
-                                                                            index2_identifier,
-                                                                            output_dir))
     comparison_thread.start()
         
 def validate_is_number(P):

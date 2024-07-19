@@ -66,13 +66,6 @@ class ISSUES_MAIN:
         self.issue_list.append(issue_item)
         return issue_item
 
-def get_dir(dir: str):
-    if dir == "":
-        return dir
-    if not os.path.isdir(dir): 
-        os.mkdir(dir)
-    return dir
-
 def find_discrepencies(uploaded_file_path: str, 
                        original_file_path: str, 
                        progress_to_show_in_gui = None,
@@ -262,7 +255,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     
     return
 
-def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, output_dir: str = "", output_to_excel: bool = True) -> None:
+def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, progress_status = None, output_dir: str = "", output_to_excel: bool = True) -> None:
     folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
     if not os.path.isdir(folder_path_for_job):
         os.mkdir(folder_path_for_job)
