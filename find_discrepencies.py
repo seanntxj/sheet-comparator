@@ -267,11 +267,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
 
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, output_dir: str = "", output_to_excel: bool = True) -> None:
     for issue in issue_main_list: 
-        if output_to_excel:
-            write_issues(issues, output_dir=output_dir, output_to_excel=True )
-        else: 
-            write_issues(issues, output_dir=output_dir)
-
+        write_issues(issue, output_dir=output_dir, use_excel=output_to_excel )
     return 
 
 def load_mapping_uploaded_to_original():

@@ -7,8 +7,8 @@ import os
 from find_discrepencies import find_discrepencies, write_issues, compare_csv_folders, write_multiple_issues
 
 TESTING = False
-DEFAULT_ORI = 'ori.csv'
-DEFAULT_UPL = 'upl2.csv'
+DEFAULT_ORI = 'ori_test'
+DEFAULT_UPL = 'upl_test'
 
 def compare_csv_files(file1_path: str, 
                       file2_path: str, 
@@ -37,13 +37,7 @@ def compare_csv_files(file1_path: str,
     else: # Run actual comparison
         res = find_discrepencies(file2_path, file1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
 
-
-    if excel_output:
-        update_progress_status('Writing to Excel, if this takes too long, use text.')
-        write_issues(res, output_dir=output_dir, use_excel=True, progress_bar=update_progress_bar, progress_status=update_progress_status)
-    else:
-        update_progress_status('Writing to text file.')
-        write_issues(res, output_dir=output_dir)
+    write_issues(res, output_dir=output_dir, use_excel=excel_output, progress_bar=update_progress_bar, progress_status=update_progress_status)
 
     # Update status
     if res.has_issues():
