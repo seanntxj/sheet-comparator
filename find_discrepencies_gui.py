@@ -4,7 +4,7 @@ from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
 import os
-from find_discrepencies_with_progress_bar import find_discrepencies, write_issues, write_issues_to_excel, compare_csv_folders
+from find_discrepencies import find_discrepencies, write_issues, write_issues_to_excel, compare_csv_folders, write_multiple_issues
 
 TESTING = False
 
@@ -38,10 +38,10 @@ def compare_csv_files(file1_path: str,
     if len(res.issue_list) > 0:
         if excel_output:
             update_progress_status('Writing to Excel, if this takes too long, use text.')
-            write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
+            write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir, name=res.name)
         else:
             update_progress_status('Writing to text file.')
-            write_issues(res.issue_list, output_dir=output_dir)
+            write_issues(res.issue_list, output_dir=output_dir, name=res.name)
 
     update_progress_status(res.status.value)
     compare_button.config(state=tk.NORMAL)
@@ -75,14 +75,7 @@ def compare_csv_folder(folder1_path: str,
     else: # Run actual comparison
         res_list = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
 
-    for res in res_list:
-        if len(res.issue_list) > 0:
-            if excel_output:
-                update_progress_status('Writing to Excel, if this takes too long, use text.')
-                write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
-            else:
-                update_progress_status('Writing to text file.')
-                write_issues(res.issue_list, output_dir=output_dir)
+    write_multiple_issues(res_list, update_progress_bar, output_dir, excel_output)
 
     update_progress_status('All files have finished processing.')
     compare_button.config(state=tk.NORMAL)

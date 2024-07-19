@@ -31,6 +31,7 @@ class ISSUE_ITEM:
 class ISSUES_MAIN:
     def __init__(self) -> None:
         self.status = NATURE_OF_ISSUES.OK
+        self.name = ""
         self.issue_list: list[ISSUES_MAIN] = []
         self.uploaded_fields: list[str] = []
         self.original_fields: list[str] = []
@@ -95,7 +96,7 @@ def find_discrepencies(uploaded_file_path: str,
 
     # Initialise issues custom class to hold all the found issues (if any)
     issues = ISSUES_MAIN()
-
+    issues.name = original_file_path.split('/')[-1].split('.')[0]
     # Save the fields for later use 
     issues.original_fields = fields_ori_csv
     issues.uploaded_fields = fields_uploaded_csv
@@ -169,13 +170,13 @@ def find_discrepencies(uploaded_file_path: str,
         status_to_show_in_gui(issues.status.value)
     return issues
 
-def write_issues(issues: list[ISSUE_ITEM], output_dir: str = ""):
+def write_issues(issues: list[ISSUE_ITEM], output_dir: str = "", name: str = ""):
     if len(issues) == 0:
         return
 
     output_dir = get_dir(output_dir)
 
-    f = open(f'{output_dir}issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
+    f = open(f'{output_dir}issues_{name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
     for row in issues:
         original_row = 'ORI |'
         for x, item in enumerate(row.original_row): 
@@ -195,14 +196,14 @@ def write_issues(issues: list[ISSUE_ITEM], output_dir: str = ""):
     f.close()
     return 
 
-def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None, output_dir: str = "") -> None:
+def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None, output_dir: str = "", name: str = "") -> None:
     if len(issues) == 0:
         return 
 
     output_dir = get_dir(output_dir)
 
     # Create the excel file
-    filename = f'{output_dir}issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
+    filename = f'{output_dir}issues_{name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
     if not os.path.isfile(filename):
         wb = Workbook()
         wb.save(filename)
@@ -239,6 +240,14 @@ def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_
     wb.save(filename)
     return 
 
+def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, output_dir: str = "", output_to_excel: bool = True) -> None:
+    for issue in issue_main_list: 
+        if output_to_excel: 
+            write_issues_to_excel(issue.issue_list, issue.original_fields, progress_bar, output_dir, issue.name)
+        else: 
+            write_issues(issue.issue_list, output_dir, issue.name)
+    return 
+
 def load_mapping_uploaded_to_original():
     f = open('mapping.csv', 'r')
     mapping_csv_reader = csv.reader(f)
@@ -262,13 +271,13 @@ def compare_csv_folders(uploaded_folder_path: str,
     original_file_paths_hash = {} 
     
     for item in original_file_names:
-        original_file_paths_hash[item.split('_')[0]] =  f'{original_folder_path}/{item}'
+        original_file_paths_hash[item.split('-')[0]] =  f'{original_folder_path}/{item}'
 
     issues_list: list[ISSUES_MAIN] = []
     
     for i, uploaded_file_name in enumerate(uploaded_file_names):
         uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
-        original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("_")[0]]}'
+        original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
 
         status_to_show_in_gui(f'Processing file {uploaded_file_name}')
         issues_list.append(find_discrepencies(uploaded_file_path=uploaded_file_path,
