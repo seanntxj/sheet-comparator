@@ -4,7 +4,7 @@ from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
 import os
-from find_discrepencies import find_discrepencies, write_issues, write_issues_to_excel, compare_csv_folders, write_multiple_issues
+from find_discrepencies import find_discrepencies, write_issues, compare_csv_folders, write_multiple_issues
 
 TESTING = False
 DEFAULT_ORI = 'ori.csv'
@@ -37,13 +37,13 @@ def compare_csv_files(file1_path: str,
     else: # Run actual comparison
         res = find_discrepencies(file2_path, file1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
 
-    if len(res.issue_list) > 0:
-        if excel_output:
-            update_progress_status('Writing to Excel, if this takes too long, use text.')
-            write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir, name=res.name)
-        else:
-            update_progress_status('Writing to text file.')
-            write_issues(res.issue_list, output_dir=output_dir, name=res.name)
+
+    if excel_output:
+        update_progress_status('Writing to Excel, if this takes too long, use text.')
+        write_issues(res, output_dir=output_dir, use_excel=True, progress_bar=update_progress_bar, progress_status=update_progress_status)
+    else:
+        update_progress_status('Writing to text file.')
+        write_issues(res, output_dir=output_dir)
 
     # Update status
     if res.has_issues():

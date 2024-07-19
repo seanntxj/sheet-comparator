@@ -33,8 +33,7 @@ class ISSUES_MAIN:
     def __init__(self) -> None:
         self.nature_of_issues: list[NATURE_OF_ISSUES] = [] 
         self.name = ""
-        self.issue_list: list[ISSUES_MAIN] = []
-        self.uploaded_fields: list[str] = []
+        self.issue_list: list[ISSUE_ITEM] = []
         self.original_fields: list[str] = []
         self.uploaded_hashed_fields_idxs: dict = {} #original field: uploaded field index 
 
@@ -189,82 +188,90 @@ def find_discrepencies(uploaded_file_path: str,
 
     return issues
 
-def write_issues(issues: list[ISSUE_ITEM], output_dir: str = "", name: str = ""):
-    if len(issues) == 0:
+def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = False, progress_bar = None, progress_status = None) -> None: 
+
+    # Writing logic for a text file
+    def write_to_text():
+        f = open(log_file_path, 'a+')
+        for row in issues.issue_list:
+            original_row = 'ORI |'
+            for x, item in enumerate(row.original_row): 
+                if x in row.mismatched_columns_indexes:
+                    original_row += f' <|{item}|>'
+                else:
+                    original_row += f' {item}'
+            uploaded_row = 'UPL |'
+            for x, item in enumerate(row.uploaded_row): 
+                if x in row.mismatched_columns_indexes_upl:
+                    uploaded_row += f' <|{item}|>'
+                else:
+                    uploaded_row += f' {item}'
+            f.write(f'{original_row}\n')
+            f.write(f'{uploaded_row}\n')
+            f.write(f'\n')
+        f.close()
         return
 
+    # Writing logic for excel
+    def write_to_excel():
+        if not os.path.isfile(log_file_path):
+            wb = Workbook()
+            wb.save(log_file_path)
+        sheet = wb.active # Create a pointer to the current sheet
+        row_index = 2
+        for i, item in enumerate(issues.original_fields):
+            item = item.strip().replace("ï»¿", "")
+            sheet.cell(row=1, column=i+2).value = item # offset two as the first row is taken up by the original/upload identifier
+            for i, row in enumerate(issues.issue_list):
+                # Insert the original row, offsetting 1 column to indicate in a new column for the type of row it is
+                sheet.cell(row=row_index, column=1).value = 'ORI'
+                for x, item in enumerate(row.original_row):
+                    sheet.cell(row=row_index, column=x+2).value = item
+                # Highlight the columns in which the discrepency is found
+                for mismatched_column_index in row.mismatched_columns_indexes: 
+                    sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+                row_index += 1 # Move to the next row for the uploaded row
+
+                sheet.cell(row=row_index, column=1).value = 'UPL'
+                for x, item in enumerate(row.uploaded_row):
+                    sheet.cell(row=row_index, column=x+2).value = item
+                for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes_upl): 
+                    sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+                row_index += 1
+
+                # Update progress 
+                # pbar.update(1)
+                if progress_bar:
+                    progress_bar( min( int(i / len(issues.issue_list)*100) + 1, 100) )
+
+            wb.save(log_file_path)
+            return
+
+    # Exit prematurely if there's no issues to write
+    if len(issues.issue_list) == 0: 
+        return
+    
+    # Get the directory to place the log
     output_dir = get_dir(output_dir)
 
-    f = open(f'{output_dir}issues_{name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.txt', 'a+')
-    for row in issues:
-        original_row = 'ORI |'
-        for x, item in enumerate(row.original_row): 
-            if x in row.mismatched_columns_indexes:
-                original_row += f' <|{item}|>'
-            else:
-                original_row += f' {item}'
-        uploaded_row = 'UPL |'
-        for x, item in enumerate(row.uploaded_row): 
-            if x in row.mismatched_columns_indexes_upl:
-                uploaded_row += f' <|{item}|>'
-            else:
-                uploaded_row += f' {item}'
-        f.write(f'{original_row}\n')
-        f.write(f'{uploaded_row}\n')
-        f.write(f'\n')
-    f.close()
-    return 
-
-def write_issues_to_excel(issues: list[ISSUE_ITEM], fields: list[str], progress_bar = None, output_dir: str = "", name: str = "") -> None:
-    if len(issues) == 0:
-        return 
-
-    output_dir = get_dir(output_dir)
-
-    # Create the excel file
-    filename = f'{output_dir}issues_{name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.xlsx'
-    if not os.path.isfile(filename):
-        wb = Workbook()
-        wb.save(filename)
-    sheet = wb.active # Create a pointer to the current sheet
-
-    for i, item in enumerate(fields):
-        item = item.strip().replace("ï»¿", "")
-        sheet.cell(row=1, column=i+2).value = item # offset two as the first row is taken up by the original/upload identifier
-
-    row_index = 2
-    # pbar = tqdm(total=len(issues), desc="Inserting into Excel")
-    for i, row in enumerate(issues):
-        # Insert the original row, offsetting 1 column to indicate in a new column for the type of row it is
-        sheet.cell(row=row_index, column=1).value = 'ORI'
-        for x, item in enumerate(row.original_row):
-            sheet.cell(row=row_index, column=x+2).value = item
-        # Highlight the columns in which the discrepency is found
-        for mismatched_column_index in row.mismatched_columns_indexes: 
-            sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
-        row_index += 1 # Move to the next row for the uploaded row
-
-        sheet.cell(row=row_index, column=1).value = 'UPL'
-        for x, item in enumerate(row.uploaded_row):
-            sheet.cell(row=row_index, column=x+2).value = item
-        for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes_upl): 
-            sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
-        row_index += 1
-
-        # Update progress 
-        # pbar.update(1)
-        if progress_bar:
-            progress_bar( min( int(i / len(issues)*100) + 1, 100) )
-
-    wb.save(filename)
-    return 
+    # Get the exact path and file to log 
+    log_file_path = f'{output_dir}issues_{issues.name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+    if use_excel: 
+        log_file_path += '.xlsx'
+        write_to_excel()
+    else:
+        log_file_path += '.txt'
+        write_to_text()
+    
+    return
 
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, output_dir: str = "", output_to_excel: bool = True) -> None:
     for issue in issue_main_list: 
-        if output_to_excel: 
-            write_issues_to_excel(issue.issue_list, issue.original_fields, progress_bar, output_dir, issue.name)
+        if output_to_excel:
+            write_issues(issues, output_dir=output_dir, output_to_excel=True )
         else: 
-            write_issues(issue.issue_list, output_dir, issue.name)
+            write_issues(issues, output_dir=output_dir)
+
     return 
 
 def load_mapping_uploaded_to_original():
