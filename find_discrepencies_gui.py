@@ -141,11 +141,8 @@ def compare_button_click():
         
 
 def validate(P):
-  """Validates input to ensure only numbers are entered."""
-  if P.isdigit() or P == "":
-    return True
-  else:
-    return False
+    """Validates input to ensure only numbers are entered."""
+    return P.isdigit() or P == ""
 
 if __name__ == "__main__":
     # Window and widgets
