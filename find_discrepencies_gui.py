@@ -40,7 +40,7 @@ def compare_csv_files(file1_path: str,
             update_progress_status('Writing to Excel, if this takes too long, use text.')
             write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
         else:
-            update_progress_status('Writing to text file, if this takes too long, use text.')
+            update_progress_status('Writing to text file.')
             write_issues(res.issue_list, output_dir=output_dir)
 
     update_progress_status(res.status.value)
@@ -73,15 +73,16 @@ def compare_csv_folder(folder1_path: str,
             update_progress_bar(i + 1) 
             time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
     else: # Run actual comparison
-        res = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
+        res_list = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
 
-    # if len(res.issue_list) > 0:
-    #     if excel_output:
-    #         update_progress_status('Writing to Excel, if this takes too long, use text.')
-    #         write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
-    #     else:
-    #         update_progress_status('Writing to text file, if this takes too long, use text.')
-    #         write_issues(res.issue_list, output_dir=output_dir)
+    for res in res_list:
+        if len(res.issue_list) > 0:
+            if excel_output:
+                update_progress_status('Writing to Excel, if this takes too long, use text.')
+                write_issues_to_excel(res.issue_list, res.original_fields ,progress_bar=update_progress_bar, output_dir=output_dir)
+            else:
+                update_progress_status('Writing to text file.')
+                write_issues(res.issue_list, output_dir=output_dir)
 
     update_progress_status('All files have finished processing.')
     compare_button.config(state=tk.NORMAL)
