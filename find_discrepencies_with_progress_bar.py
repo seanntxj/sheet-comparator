@@ -259,16 +259,16 @@ def compare_csv_folders(uploaded_folder_path: str,
     
     uploaded_file_names = [item for item in os.listdir(uploaded_folder_path) if item.endswith('.csv')]   
     original_file_names = [item for item in os.listdir(original_folder_path) if item.endswith('.csv')]
-    original_file_names_hash = {} 
+    original_file_paths_hash = {} 
     
     for item in original_file_names:
-        original_file_names_hash[item.split('_')[0]] =  f'{original_folder_path}/{item}'
+        original_file_paths_hash[item.split('_')[0]] =  f'{original_folder_path}/{item}'
 
     issues_list: list[ISSUES_MAIN] = []
     
     for i, uploaded_file_name in enumerate(uploaded_file_names):
         uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
-        original_file_path = f'{original_folder_path}/{original_file_names_hash[uploaded_file_name.split("_")[0]]}'
+        original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("_")[0]]}'
 
         status_to_show_in_gui(f'Processing file {uploaded_file_name}')
         issues_list.append(find_discrepencies(uploaded_file_path=uploaded_file_path,

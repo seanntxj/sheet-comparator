@@ -83,7 +83,7 @@ def compare_csv_folder(folder1_path: str,
     #         update_progress_status('Writing to text file, if this takes too long, use text.')
     #         write_issues(res.issue_list, output_dir=output_dir)
 
-    update_progress_status(res.status.value)
+    update_progress_status('All files have finished processing.')
     compare_button.config(state=tk.NORMAL)
     progress_var.set(100)
     return
@@ -131,7 +131,6 @@ def compare_button_click():
                                                                     index1_identifier,
                                                                     index2_identifier,
                                                                     output_dir))
-        return
     
     if ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ):
         # Run comparison in a separate thread
@@ -144,8 +143,8 @@ def compare_button_click():
                                                                             index1_identifier,
                                                                             index2_identifier,
                                                                             output_dir))
-        comparison_thread.start()
-        return
+    comparison_thread.start()
+        
 
 def validate(P):
   """Validates input to ensure only numbers are entered."""
