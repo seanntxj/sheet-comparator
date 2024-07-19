@@ -139,8 +139,7 @@ def compare_button_click():
                                                                             output_dir))
     comparison_thread.start()
         
-
-def validate(P):
+def validate_is_number(P):
     """Validates input to ensure only numbers are entered."""
     return P.isdigit() or P == ""
 
@@ -177,7 +176,7 @@ if __name__ == "__main__":
 
     index1_var = tk.IntVar()
     index1_var.set(1)
-    index1_textbox = tk.Entry(file1_frame, width=5, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate), "%P"))
+    index1_textbox = tk.Entry(file1_frame, width=5, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate_is_number), "%P"))
     index1_textbox.pack(side=tk.LEFT)
 
     # Frame for second CSV file selection
@@ -203,7 +202,7 @@ if __name__ == "__main__":
 
     index2_var = tk.IntVar()
     index2_var.set(1)
-    index2_textbox = tk.Entry(file2_frame, width=5,textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate), "%P"))
+    index2_textbox = tk.Entry(file2_frame, width=5,textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate_is_number), "%P"))
     index2_textbox.pack(side=tk.LEFT)
 
     # Frame for outfile file location
