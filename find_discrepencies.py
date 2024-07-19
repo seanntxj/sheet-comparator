@@ -71,7 +71,7 @@ def get_dir(dir: str):
         return dir
     if not os.path.isdir(dir): 
         os.mkdir(dir)
-    return f'{dir}/'
+    return dir
 
 def find_discrepencies(uploaded_file_path: str, 
                        original_file_path: str, 
@@ -250,12 +250,9 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     # Exit prematurely if there's no issues to write
     if len(issues.issue_list) == 0: 
         return
-    
-    # Get the directory to place the log
-    output_dir = get_dir(output_dir)
 
     # Get the exact path and file to log 
-    log_file_path = f'{output_dir}issues_{issues.name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+    log_file_path = f'{output_dir}/issues_{issues.name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
     if use_excel: 
         log_file_path += '.xlsx'
         write_to_excel()
@@ -266,8 +263,11 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     return
 
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, output_dir: str = "", output_to_excel: bool = True) -> None:
+    folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+    if not os.path.isdir(folder_path_for_job):
+        os.mkdir(folder_path_for_job)
     for issue in issue_main_list: 
-        write_issues(issue, output_dir=output_dir, use_excel=output_to_excel )
+        write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
     return 
 
 def load_mapping_uploaded_to_original():
