@@ -284,7 +284,9 @@ def compare_csv_folders(uploaded_folder_path: str,
                            original_file_path=original_file_path,
                            uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
                            original_file_identifiying_field_index=original_file_identifiying_field_index))
+        status_to_show_in_gui(f'Completed processing of {uploaded_file_name}')
 
+    status_to_show_in_gui(f'Completed processing of all files.')
     return issues_list
 
 if __name__ == "__main__": 

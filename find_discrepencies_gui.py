@@ -73,15 +73,15 @@ def compare_csv_folder(folder1_path: str,
             update_progress_bar(i + 1) 
             time.sleep(0.02)  # Simulate some processing time (replace with actual comparison logic)
     else: # Run actual comparison
-        res_list = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
+        try:
+            res_list = compare_csv_folders(folder2_path, folder1_path, update_progress_bar, update_progress_status, index1_identifier, index2_identifier)
+            write_multiple_issues(res_list, update_progress_bar, output_dir, excel_output)
+        except KeyError as e: 
+            update_progress_status(f'Cannot find the matching file for {e.args[0]}')
 
-    write_multiple_issues(res_list, update_progress_bar, output_dir, excel_output)
-
-    update_progress_status('All files have finished processing.')
     compare_button.config(state=tk.NORMAL)
     progress_var.set(100)
     return
-
 
 def get_csv_file(file_path_var: tk.StringVar):
     """
@@ -152,7 +152,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("CSV Comparison Tool")
     root.geometry('600x170')
-    root.resizable(0,0)
     use_excel = tk.BooleanVar(value=True)  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
