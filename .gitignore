@@ -52,6 +52,7 @@ Thumbs.db
 
 # Python venv
 /venv
+/build_venv
 
 # Build files 
 /*build

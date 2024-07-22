@@ -15,6 +15,7 @@ DEFAULT_CONFIG =  {
                     "upl": "upl_test",
                     "ori_identifier_idx": 1, 
                     "upl_identifier_idx": 1, 
+                    "output_folder": os.getcwd()
                     }
 
 def save_settings(config_file_path: str, settings: dict):
@@ -137,7 +138,7 @@ if __name__ == "__main__":
 
     # Window and widgets
     root = tk.Tk()
-    root.title("CSV Comparison Tool")
+    root.title("Sheet Comparitor")
     root.geometry('600x170')
     use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
 
@@ -204,7 +205,7 @@ if __name__ == "__main__":
     output_dir_label.pack(side=tk.LEFT)  # Pack label to the left
 
     output_dir_var = tk.StringVar()
-    output_dir_var.set(f'{os.getcwd()}')
+    output_dir_var.set(config["output_folder"])
     output_dir_textbox = tk.Entry(output_dir_frame, textvariable=output_dir_var)
     output_dir_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
@@ -233,5 +234,6 @@ if __name__ == "__main__":
        "ori": file1_var.get(), 
        "upl": file2_var.get(),
        "ori_identifier_idx": index1_var.get(),
-       "upl_identifier_idx": index2_var.get()
+       "upl_identifier_idx": index2_var.get(),
+       "output_folder": output_dir_var.get()
     })
