@@ -49,31 +49,37 @@ def compare_csvs_aux(item1_path: str,
                       index1_identifier: int,
                       index2_identifier: int,
                       output_dir: str) -> None: 
+    
     # Disable the compare button to prevent spamming
     compare_button.config(state=tk.DISABLED)
 
-    # Run bulk logic if its a folder path being provided 
-    if ( os.path.isdir(item1_path) and os.path.isdir(item2_path) ):
-        res = compare_csv_folders(uploaded_folder_path=item2_path,
-                            original_folder_path=item1_path,
-                            progress_to_show_in_gui=update_progress_bar,
-                            status_to_show_in_gui=update_progress_status,
-                            uploaded_file_identifiying_field_index=index2_identifier,
-                            original_file_identifiying_field_index=index1_identifier)
-        write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
+    try:
+        # Run bulk logic if its a folder path being provided 
+        if ( os.path.isdir(item1_path) and os.path.isdir(item2_path) ):
+            res = compare_csv_folders(uploaded_folder_path=item2_path,
+                                original_folder_path=item1_path,
+                                progress_to_show_in_gui=update_progress_bar,
+                                status_to_show_in_gui=update_progress_status,
+                                uploaded_file_identifiying_field_index=index2_identifier,
+                                original_file_identifiying_field_index=index1_identifier)
+            write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
 
-    # Run single file logic if its a file path being provided
-    if ( os.path.isfile(item1_path) and os.path.isfile(item2_path) ):
-        res = find_discrepencies(uploaded_file_path=item2_path,
-                                 original_file_path=item1_path,
-                                 progress_to_show_in_gui=update_progress_bar,
-                                 status_to_show_in_gui=update_progress_status,
-                                 uploaded_file_identifiying_field_index=index2_identifier,
-                                 original_file_identifiying_field_index=index1_identifier)
-        write_issues(res, output_dir, excel_output, update_progress_bar, update_progress_status)
+        # Run single file logic if its a file path being provided
+        if ( os.path.isfile(item1_path) and os.path.isfile(item2_path) ):
+            res = find_discrepencies(uploaded_file_path=item2_path,
+                                    original_file_path=item1_path,
+                                    progress_to_show_in_gui=update_progress_bar,
+                                    status_to_show_in_gui=update_progress_status,
+                                    uploaded_file_identifiying_field_index=index2_identifier,
+                                    original_file_identifiying_field_index=index1_identifier)
+            write_issues(res, output_dir, excel_output, update_progress_bar, update_progress_status)
+            
+        progress_var.set(100)
+    except Exception as e:
+        update_progress_status(f'ERROR: {e}')
+        progress_var.set(0)
 
     compare_button.config(state=tk.NORMAL)
-    progress_var.set(100)
     return
 
 def get_file(file_path_var: tk.StringVar):
