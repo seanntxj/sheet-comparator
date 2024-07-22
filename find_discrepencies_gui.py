@@ -52,7 +52,8 @@ def compare_csvs_aux(item1_path: str,
     
     # Disable the compare button to prevent spamming
     compare_button.config(state=tk.DISABLED)
-
+    progress_var.set(0)
+    
     try:
         # Run bulk logic if its a folder path being provided 
         if ( os.path.isdir(item1_path) and os.path.isdir(item2_path) ):
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     # Window and widgets
     root = tk.Tk()
     root.title("Sheet Comparitor")
-    root.geometry('600x170')
+    root.geometry('870x170')
     use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     output_dir_textbox = tk.Entry(output_dir_frame, textvariable=output_dir_var)
     output_dir_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
-    output_dir_browse_button = tk.Button(output_dir_frame, text="Browse", command=lambda: get_directory(output_dir_var))
+    output_dir_browse_button = tk.Button(output_dir_frame, text="Folder", command=lambda: get_directory(output_dir_var))
     output_dir_browse_button.pack(side=tk.LEFT)  # Pack button to right
 
     progress_var = tk.IntVar()
