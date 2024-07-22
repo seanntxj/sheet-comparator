@@ -3,13 +3,32 @@ from tkinter import filedialog
 from tkinter import ttk  # Import ttk for progressbar
 import time
 import threading
+import json
+from appdirs import user_data_dir
 import os
 from find_discrepencies import find_discrepencies, write_issues, compare_csv_folders, write_multiple_issues
 
 TESTING = False
-DEFAULT_ORI = 'ori_test'
-DEFAULT_UPL = 'upl_test'
-# TODO Get last used folder/file
+DEFAULT_CONFIG =  { 
+                    "output_to_excel": True,
+                    "ori": "ori_test", 
+                    "upl": "upl_test"
+                    }
+
+def save_settings(config_file_path: str, settings: dict):
+    """ Saves user settings to a JSON file, creating directories if necessary. """
+    # Ensure the directory containing the file exists
+    os.makedirs(os.path.dirname(config_file_path), exist_ok=True)
+    # Open the file in write mode (will create it if not existing)
+    with open(config_file_path, 'w') as f:
+        json.dump(settings, f)
+
+def load_settings(defaults: dict, config_file_path: str):
+    """ Loads user settings from a JSON file. """
+    if not os.path.exists(config_file_path):  
+        return defaults
+    with open(config_file_path, 'r') as f:
+        return json.load(f)
 
 def update_progress_bar(progress_value: int) -> None:
     progress_var.set(progress_value)  # Update progress bar value
@@ -107,11 +126,18 @@ def validate_is_number(P):
     return P.isdigit() or P == ""
 
 if __name__ == "__main__":
+    app_name = 'Sheet Comparitor'
+    # Get the platform-specific configuration directory
+    config_dir = user_data_dir(appname=app_name, appauthor='seanntxj', roaming=False)  
+    # Construct the configuration file path
+    config_file_path = os.path.join(config_dir, 'config.json')
+    config = load_settings(DEFAULT_CONFIG, config_file_path)
+
     # Window and widgets
     root = tk.Tk()
     root.title("CSV Comparison Tool")
     root.geometry('600x170')
-    use_excel = tk.BooleanVar(value=True)  # Boolean variable, initially True (checked)
+    use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
     file_selector_frame.pack(fill=tk.X, pady=10)
@@ -124,7 +150,7 @@ if __name__ == "__main__":
     file1_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file1_var = tk.StringVar()
-    file1_var.set(DEFAULT_ORI)
+    file1_var.set(config["ori"])
     file1_textbox = tk.Entry(file1_frame, textvariable=file1_var)
     file1_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
@@ -150,7 +176,7 @@ if __name__ == "__main__":
     file2_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file2_var = tk.StringVar()
-    file2_var.set(DEFAULT_UPL)
+    file2_var.set(config["upl"])
     file2_textbox = tk.Entry(file2_frame, textvariable=file2_var)
     file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
@@ -199,3 +225,9 @@ if __name__ == "__main__":
     output_label.pack()
 
     root.mainloop()
+
+    save_settings(config_file_path, { 
+       "output_to_excel": use_excel.get(),
+       "ori": file1_var.get(), 
+       "upl": file2_var.get()
+    })
