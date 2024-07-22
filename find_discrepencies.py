@@ -14,7 +14,7 @@ import os.path
 # from tqdm import tqdm
 import time
 from enum import Enum
-from openpyxl import Workbook, styles
+from openpyxl import Workbook, styles, load_workbook
 
 class NATURE_OF_ISSUES(Enum): 
     OK = "No issues found."
@@ -62,10 +62,30 @@ class ISSUES_MAIN:
         columns_where_discrepency_is_found_upl = []
         for column_idx in columns_where_discrepency_is_found:
             columns_where_discrepency_is_found_upl.append(self.uploaded_hashed_fields_idxs[self.original_fields[column_idx]])
-            # TODO Save the uploaded row in the same column order as the original file
+        # TODO Save the uploaded row in the same column order as the original file
         issue_item = ISSUE_ITEM(original_row, uploaded_row, columns_where_discrepency_is_found, columns_where_discrepency_is_found_upl)
         self.issue_list.append(issue_item)
         return issue_item
+
+    def insert_missing_column(self, original_columns, uploaded_columns, columns_missing_from_uploaded: list[str]):
+        issue_item = ISSUE_ITEM(original_row=original_columns, 
+                                 uploaded_row=uploaded_columns, 
+                                 mismatched_columns_indexes=columns_missing_from_uploaded, 
+                                 mismatched_columns_indexes_upl=columns_missing_from_uploaded)
+        self.issue_list.append(issue_item)
+        return issue_item
+
+def xlsx_to_csv(excel_file_path: str) -> str:
+    wb = load_workbook(excel_file_path)
+    sh = wb.active.values
+    fields = [] 
+    rest = []
+    for i, row in enumerate(sh): 
+        if i == 0: 
+            fields = row 
+        else: 
+            rest.append(row)
+    return fields, rest 
 
 def find_discrepencies(uploaded_file_path: str, 
                        original_file_path: str, 
@@ -88,21 +108,25 @@ def find_discrepencies(uploaded_file_path: str,
     if status_to_show_in_gui:
         status_to_show_in_gui('Setting up...')
 
-    # TODO Add .xlsx support
+    # If Excel file given, convert to CSV first
+    if uploaded_file_path.split('.')[-1] == 'csv': 
+        # Read uploaded csv file
+        f_uploaded = open(uploaded_file_path, 'r')
+        uploaded_csv_reader = csv.reader(f_uploaded)
 
-    # Read uploaded csv file
-    f_uploaded = open(uploaded_file_path, 'r')
-    uploaded_csv_reader = csv.reader(f_uploaded)
-
-    # Field names 
-    fields_uploaded_csv = next(uploaded_csv_reader)
-
-    # Read original csv file
-    f_ori = open(original_file_path, 'r')
-    ori_csv_reader = csv.reader(f_ori)
-    
-    # Field names 
-    fields_ori_csv = next(ori_csv_reader)
+        # Field names 
+        fields_uploaded_csv = next(uploaded_csv_reader)
+    else:
+        fields_uploaded_csv, uploaded_csv_reader = xlsx_to_csv(uploaded_file_path)
+    if original_file_path.split('.')[-1] == 'csv': 
+        # Read original csv file
+        f_ori = open(original_file_path, 'r')
+        ori_csv_reader = csv.reader(f_ori)
+        
+        # Field names 
+        fields_ori_csv = next(ori_csv_reader)
+    else:
+        fields_ori_csv, ori_csv_reader = xlsx_to_csv(original_file_path)
 
     # Initialise issues custom class to hold all the found issues (if any)
     issues = ISSUES_MAIN()
@@ -118,7 +142,7 @@ def find_discrepencies(uploaded_file_path: str,
             issues.nature_of_issues.append(NATURE_OF_ISSUES.FIELDS_MISMATCH)
             mismatched_fields.append(i)
     if NATURE_OF_ISSUES.FIELDS_MISMATCH in issues.nature_of_issues: 
-        issues.insert_issue(fields_ori_csv, fields_uploaded_csv, mismatched_fields)
+        issues.insert_missing_column(fields_ori_csv, fields_uploaded_csv, mismatched_fields)
         # TODO Toggle for checking regardless of fields being mismatched
         return issues
     
@@ -215,6 +239,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
             wb.save(log_file_path)
         sheet = wb.active # Create a pointer to the current sheet
         row_index = 2
+        # TODO Excel headers not working?
         for i, item in enumerate(issues.original_fields):
             item = item.strip().replace("ï»¿", "")
             sheet.cell(row=1, column=i+2).value = item # offset two as the first row is taken up by the original/upload identifier
@@ -284,8 +309,8 @@ def compare_csv_folders(uploaded_folder_path: str,
                        uploaded_file_identifiying_field_index: int = 0,
                        original_file_identifiying_field_index: int = 0) -> list[ISSUES_MAIN]:
     
-    uploaded_file_names = [item for item in os.listdir(uploaded_folder_path) if item.endswith('.csv')]   
-    original_file_names = [item for item in os.listdir(original_folder_path) if item.endswith('.csv')]
+    uploaded_file_names = [item for item in os.listdir(uploaded_folder_path) if item.endswith('.csv') or item.endswith('.xlsx')]   
+    original_file_names = [item for item in os.listdir(original_folder_path) if item.endswith('.csv') or item.endswith('.xlsx')]
     original_file_paths_hash = {} 
     
     for item in original_file_names:
@@ -295,6 +320,7 @@ def compare_csv_folders(uploaded_folder_path: str,
     
     for i, uploaded_file_name in enumerate(uploaded_file_names):
         uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
+        # TODO Fix when original file doesn't have a corresponding upload file
         original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
 
         status_to_show_in_gui(f'Processing file {uploaded_file_name}')
@@ -317,19 +343,21 @@ if __name__ == "__main__":
         print(f'Using default filenames ori.csv and uploaded.csv with column index 0 as identifier\n\n')
         ori_file_name = 'ori.csv'
         uploaded_file_name = 'uploaded.csv'
-    try: 
-        uploaded_file_identifiying_field_index = int(sys.argv[3])
-        original_file_identifiying_field_index = int(sys.argv[4])
-    except:
-        uploaded_file_identifiying_field_index = 0
-        original_file_identifiying_field_index = 0
 
-    # Give error and quit script if files cannot be found
-    if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
-        raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
+    file = 'ori/SPTE-Pre-Upload Customer Master Data Trial Conversion - SPTE.xlsx'
+    # try: 
+    #     uploaded_file_identifiying_field_index = int(sys.argv[3])
+    #     original_file_identifiying_field_index = int(sys.argv[4])
+    # except:
+    #     uploaded_file_identifiying_field_index = 0
+    #     original_file_identifiying_field_index = 0
+
+    # # Give error and quit script if files cannot be found
+    # if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
+    #     raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
     
-    issues = find_discrepencies(uploaded_file_name,
-                                 ori_file_name, 
-                                 uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
-                                 original_file_identifiying_field_index=original_file_identifiying_field_index)
-    write_issues(issues.issue_list)
+    # issues = find_discrepencies(uploaded_file_name,
+    #                              ori_file_name, 
+    #                              uploaded_file_identifiying_field_index=uploaded_file_identifiying_field_index,
+    #                              original_file_identifiying_field_index=original_file_identifiying_field_index)
+    # write_issues(issues.issue_list)

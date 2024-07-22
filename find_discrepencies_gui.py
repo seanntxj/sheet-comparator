@@ -54,11 +54,17 @@ def compare_csvs_aux(item1_path: str,
     progress_var.set(100)
     return
 
-def get_csv_file(file_path_var: tk.StringVar):
+def get_file(file_path_var: tk.StringVar):
     """
     Opens a file explorer window and sets the selected file path to the entry widget.
     """
-    file_path = filedialog.askopenfilename(title="Select CSV file", filetypes=[("CSV Files", "*.csv")])
+    file_path = filedialog.askopenfilename(
+        title="Select CSV or Excel file",
+        filetypes=(
+            ("CSV Files", "*.csv"),
+            ("Excel Files", "*.xlsx"),
+        )
+    )    
     if file_path:
         file_path_var.set(file_path)
 
@@ -114,7 +120,7 @@ if __name__ == "__main__":
     file1_frame = tk.Frame(file_selector_frame)
     file1_frame.pack(fill=tk.X, padx=25)
 
-    file1_label = tk.Label(file1_frame, text="Select original CSV file:")
+    file1_label = tk.Label(file1_frame, text="Select original file:")
     file1_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file1_var = tk.StringVar()
@@ -122,7 +128,7 @@ if __name__ == "__main__":
     file1_textbox = tk.Entry(file1_frame, textvariable=file1_var)
     file1_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
-    file1_browse_button = tk.Button(file1_frame, text="File", command=lambda: get_csv_file(file1_var))
+    file1_browse_button = tk.Button(file1_frame, text="File", command=lambda: get_file(file1_var))
     file1_browse_button.pack(side=tk.LEFT)  
 
     file1_browse_folder_button = tk.Button(file1_frame, text="Folder", command=lambda: get_directory(file1_var))
@@ -140,7 +146,7 @@ if __name__ == "__main__":
     file2_frame = tk.Frame(file_selector_frame)
     file2_frame.pack(fill=tk.X, padx=25)
 
-    file2_label = tk.Label(file2_frame, text="Select uploaded CSV file:")
+    file2_label = tk.Label(file2_frame, text="Select uploaded file:")
     file2_label.pack(side=tk.LEFT)  # Pack label to the left
 
     file2_var = tk.StringVar()
@@ -148,7 +154,7 @@ if __name__ == "__main__":
     file2_textbox = tk.Entry(file2_frame, textvariable=file2_var)
     file2_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
-    file2_browse_button = tk.Button(file2_frame, text="File", command=lambda: get_csv_file(file2_var))
+    file2_browse_button = tk.Button(file2_frame, text="File", command=lambda: get_file(file2_var))
     file2_browse_button.pack(side=tk.LEFT)  # Pack button to right
 
     file2_browse_folder_button = tk.Button(file2_frame, text="Folder", command=lambda: get_directory(file2_var))
