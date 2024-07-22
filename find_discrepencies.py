@@ -35,6 +35,7 @@ class ISSUES_MAIN:
         self.name = ""
         self.issue_list: list[ISSUE_ITEM] = []
         self.original_fields: list[str] = []
+        self.uploaded_fields: list[str] =[] 
         self.uploaded_hashed_fields_idxs: dict = {} #original field: uploaded field index 
 
     def has_issues(self) -> bool:
@@ -59,11 +60,17 @@ class ISSUES_MAIN:
         return issue_item
 
     def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepency_is_found: list[int]):
-        columns_where_discrepency_is_found_upl = []
-        for column_idx in columns_where_discrepency_is_found:
-            columns_where_discrepency_is_found_upl.append(self.uploaded_hashed_fields_idxs[self.original_fields[column_idx]])
-        # TODO Save the uploaded row in the same column order as the original file
-        issue_item = ISSUE_ITEM(original_row, uploaded_row, columns_where_discrepency_is_found, columns_where_discrepency_is_found_upl)
+        # TODO remove redundant columns_where_discrepency_is_found_upl
+        # columns_where_discrepency_is_found_upl = []
+        # for column_idx in columns_where_discrepency_is_found:
+        #     columns_where_discrepency_is_found_upl.append(self.uploaded_hashed_fields_idxs[self.original_fields[column_idx]])
+        # Uploaded row mapped to original row's columns 
+        mapped_uploaded_row = [] 
+        for ori_field in self.original_fields:
+            upl_field_idx = self.uploaded_hashed_fields_idxs[ori_field]
+            value_from_upl_sheet = uploaded_row[upl_field_idx]
+            mapped_uploaded_row.append(value_from_upl_sheet)
+        issue_item = ISSUE_ITEM(original_row, mapped_uploaded_row, columns_where_discrepency_is_found, columns_where_discrepency_is_found)
         self.issue_list.append(issue_item)
         return issue_item
 
