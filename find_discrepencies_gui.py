@@ -113,6 +113,10 @@ def compare_button_click():
     if not ( ( os.path.isfile(file1_path) and os.path.isfile(file2_path) ) or ( os.path.isdir(file1_path) and os.path.isdir(file2_path) ) ): 
         output_label.config(text='Cannot find files. Please check the file path for both CSVs.')
         return
+    
+    if not os.path.isdir(output_dir): 
+        output_label.config(text='Cannot find folder for output.')
+        return
 
     comparison_thread = threading.Thread(target=compare_csvs_aux, args=(file1_path, 
                                                                 file2_path, 

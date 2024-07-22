@@ -274,7 +274,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
             # Highlight the columns that have discrepencies
             for mismatched_column_index in issue.mismatched_columns_indexes:
                 # Ensure to offset the column as the first column is always the identifier
-                sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+                sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="26B688")
             
             # Place identifier for the second column 
             current_column = 1
@@ -290,7 +290,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
             # Highlight the columns that have discrepencies
             for mismatched_column_index in issue.mismatched_columns_indexes_upl:
                 # Ensure to offset the column as the first column is always the identifier
-                sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+                sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="FF8080")
 
             current_row += 1
 
