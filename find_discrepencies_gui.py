@@ -12,7 +12,9 @@ TESTING = False
 DEFAULT_CONFIG =  { 
                     "output_to_excel": True,
                     "ori": "ori_test", 
-                    "upl": "upl_test"
+                    "upl": "upl_test",
+                    "ori_identifier_idx": 1, 
+                    "upl_identifier_idx": 1, 
                     }
 
 def save_settings(config_file_path: str, settings: dict):
@@ -164,7 +166,7 @@ if __name__ == "__main__":
     index1_label.pack(side=tk.LEFT, padx=10)  
 
     index1_var = tk.IntVar()
-    index1_var.set(1)
+    index1_var.set(int(config["ori_identifier_idx"]))
     index1_textbox = tk.Entry(file1_frame, width=5, textvariable=index1_var, validate="key", validatecommand=(file1_frame.register(validate_is_number), "%P"))
     index1_textbox.pack(side=tk.LEFT)
 
@@ -190,7 +192,7 @@ if __name__ == "__main__":
     index2_label.pack(side=tk.LEFT, padx=10)  
 
     index2_var = tk.IntVar()
-    index2_var.set(1)
+    index2_var.set(int(config["upl_identifier_idx"]))
     index2_textbox = tk.Entry(file2_frame, width=5,textvariable=index2_var, validate="key", validatecommand=(file2_frame.register(validate_is_number), "%P"))
     index2_textbox.pack(side=tk.LEFT)
 
@@ -229,5 +231,7 @@ if __name__ == "__main__":
     save_settings(config_file_path, { 
        "output_to_excel": use_excel.get(),
        "ori": file1_var.get(), 
-       "upl": file2_var.get()
+       "upl": file2_var.get(),
+       "ori_identifier_idx": index1_var.get(),
+       "upl_identifier_idx": index2_var.get()
     })
