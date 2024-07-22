@@ -9,6 +9,7 @@ from find_discrepencies import find_discrepencies, write_issues, compare_csv_fol
 TESTING = False
 DEFAULT_ORI = 'ori_test'
 DEFAULT_UPL = 'upl_test'
+# TODO Get last used folder/file
 
 def update_progress_bar(progress_value: int) -> None:
     progress_var.set(progress_value)  # Update progress bar value

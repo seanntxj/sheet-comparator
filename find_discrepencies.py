@@ -62,6 +62,7 @@ class ISSUES_MAIN:
         columns_where_discrepency_is_found_upl = []
         for column_idx in columns_where_discrepency_is_found:
             columns_where_discrepency_is_found_upl.append(self.uploaded_hashed_fields_idxs[self.original_fields[column_idx]])
+            # TODO Save the uploaded row in the same column order as the original file
         issue_item = ISSUE_ITEM(original_row, uploaded_row, columns_where_discrepency_is_found, columns_where_discrepency_is_found_upl)
         self.issue_list.append(issue_item)
         return issue_item
@@ -86,6 +87,8 @@ def find_discrepencies(uploaded_file_path: str,
     # Update status
     if status_to_show_in_gui:
         status_to_show_in_gui('Setting up...')
+
+    # TODO Add .xlsx support
 
     # Read uploaded csv file
     f_uploaded = open(uploaded_file_path, 'r')
