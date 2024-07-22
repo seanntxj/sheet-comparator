@@ -85,6 +85,7 @@ def xlsx_to_csv(excel_file_path: str) -> str:
             fields = row 
         else: 
             rest.append(row)
+    wb.close()
     return fields, rest 
 
 def find_discrepencies(uploaded_file_path: str, 
@@ -159,7 +160,10 @@ def find_discrepencies(uploaded_file_path: str,
     uploaded_hashed_fields_index = issues.update_uploaded_hashed_fields_idxs()
 
     # Close the uploaded csv file, it's no longer needed as its now been hashed into memory
-    f_uploaded.close()
+    try:
+        f_uploaded.close()
+    except UnboundLocalError: 
+        pass
 
     # Update status
     if status_to_show_in_gui:
@@ -204,7 +208,10 @@ def find_discrepencies(uploaded_file_path: str,
     if len(issues.issue_list): issues.nature_of_issues.append(NATURE_OF_ISSUES.DISCREPENCY)  
 
     # Close the original csv file, we've read through everything 
-    f_ori.close()
+    try:
+        f_ori.close()
+    except UnboundLocalError: 
+        pass
 
     return issues
 
