@@ -238,35 +238,50 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
             wb = Workbook()
             wb.save(log_file_path)
         sheet = wb.active # Create a pointer to the current sheet
-        row_index = 2
-        # TODO Excel headers not working?
-        for i, item in enumerate(issues.original_fields):
-            item = item.strip().replace("ï»¿", "")
-            sheet.cell(row=1, column=i+2).value = item # offset two as the first row is taken up by the original/upload identifier
-            for i, row in enumerate(issues.issue_list):
-                # Insert the original row, offsetting 1 column to indicate in a new column for the type of row it is
-                sheet.cell(row=row_index, column=1).value = 'ORI'
-                for x, item in enumerate(row.original_row):
-                    sheet.cell(row=row_index, column=x+2).value = item
-                # Highlight the columns in which the discrepency is found
-                for mismatched_column_index in row.mismatched_columns_indexes: 
-                    sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
-                row_index += 1 # Move to the next row for the uploaded row
 
-                sheet.cell(row=row_index, column=1).value = 'UPL'
-                for x, item in enumerate(row.uploaded_row):
-                    sheet.cell(row=row_index, column=x+2).value = item
-                for x, mismatched_column_index in enumerate(row.mismatched_columns_indexes_upl): 
-                    sheet.cell(row=row_index, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
-                row_index += 1
+        # Insert the fields based on the original file
+        for column_no, field in enumerate(issues.original_fields):
+            sheet.cell(row=1, column=column_no+2).value = field
 
-                # Update progress 
-                # pbar.update(1)
-                if progress_bar:
-                    progress_bar( min( int(i / len(issues.issue_list)*100) + 1, 100) )
+        # Insert the issues 
+        current_row = 2
+        for issue in issues.issue_list:
+            current_column = 1
 
-            wb.save(log_file_path)
-            return
+            # Place the identifier in the first column 
+            sheet.cell(row=current_row, column=current_column).value = 'ORI'
+            
+            # For every following column, put in the values from the original sheet
+            current_column = 2
+            for value in issue.original_row: 
+                sheet.cell(row=current_row, column=current_column).value = value
+                current_column += 1 
+
+            # Highlight the columns that have discrepencies
+            for mismatched_column_index in issue.mismatched_columns_indexes:
+                # Ensure to offset the column as the first column is always the identifier
+                sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+            
+            # Place identifier for the second column 
+            current_column = 1
+            current_row += 1
+            sheet.cell(row=current_row, column=current_column).value = 'UPL'
+
+            # For every following column, put values from the uploaded sheet
+            current_column = 2
+            for value in issue.uploaded_row: 
+                sheet.cell(row=current_row, column=current_column).value = value
+                current_column += 1    
+            
+            # Highlight the columns that have discrepencies
+            for mismatched_column_index in issue.mismatched_columns_indexes_upl:
+                # Ensure to offset the column as the first column is always the identifier
+                sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="AFEEEE")
+
+            current_row += 1
+
+        wb.save(log_file_path)
+        return
 
     # Exit prematurely if there's no issues to write
     if len(issues.issue_list) == 0: 
