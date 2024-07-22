@@ -335,8 +335,11 @@ def compare_csv_folders(uploaded_folder_path: str,
     
     for i, uploaded_file_name in enumerate(uploaded_file_names):
         uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
-        # TODO Fix when original file doesn't have a corresponding upload file
-        original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
+        try:
+            original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
+        except: 
+            status_to_show_in_gui(f'STOP: "{uploaded_file_name}", cannot any original file that starts with "{uploaded_file_name.split("-")[0]}".')
+            break
 
         status_to_show_in_gui(f'Processing file {uploaded_file_name}')
         issues_list.append(find_discrepencies(uploaded_file_path=uploaded_file_path,
@@ -345,7 +348,6 @@ def compare_csv_folders(uploaded_folder_path: str,
                            original_file_identifiying_field_index=original_file_identifiying_field_index))
         status_to_show_in_gui(f'Completed processing of {uploaded_file_name}')
 
-    status_to_show_in_gui(f'Completed processing of all files.')
     return issues_list
 
 if __name__ == "__main__": 
