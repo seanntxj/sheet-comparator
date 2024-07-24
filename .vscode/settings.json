@@ -1,9 +1,16 @@
 {
     "cSpell.words": [
+        "appauthor",
+        "appname",
         "gmtime",
         "idxs",
         "openpyxl",
+        "padx",
+        "pady",
         "pbar",
-        "tqdm"
+        "seanntxj",
+        "textvariable",
+        "tqdm",
+        "validatecommand"
     ]
 }

@@ -6,7 +6,7 @@ import threading
 import json
 from appdirs import user_data_dir
 import os
-from find_discrepencies import find_discrepencies, write_issues, compare_csv_folders, write_multiple_issues
+from sheet_comparator_logic import find_discrepancies, write_issues, compare_csv_folders, write_multiple_issues
 
 TESTING = False
 DEFAULT_CONFIG =  { 
@@ -61,18 +61,18 @@ def compare_csvs_aux(item1_path: str,
                                 original_folder_path=item1_path,
                                 progress_to_show_in_gui=update_progress_bar,
                                 status_to_show_in_gui=update_progress_status,
-                                uploaded_file_identifiying_field_index=index2_identifier,
-                                original_file_identifiying_field_index=index1_identifier)
+                                uploaded_file_identifying_field_index=index2_identifier,
+                                original_file_identifying_field_index=index1_identifier)
             write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
 
         # Run single file logic if its a file path being provided
         if ( os.path.isfile(item1_path) and os.path.isfile(item2_path) ):
-            res = find_discrepencies(uploaded_file_path=item2_path,
+            res = find_discrepancies(uploaded_file_path=item2_path,
                                     original_file_path=item1_path,
                                     progress_to_show_in_gui=update_progress_bar,
                                     status_to_show_in_gui=update_progress_status,
-                                    uploaded_file_identifiying_field_index=index2_identifier,
-                                    original_file_identifiying_field_index=index1_identifier)
+                                    uploaded_file_identifying_field_index=index2_identifier,
+                                    original_file_identifying_field_index=index1_identifier)
             write_issues(res, output_dir, excel_output, update_progress_bar, update_progress_status)
             
         progress_var.set(100)
@@ -140,7 +140,7 @@ def validate_is_number(P):
     return P.isdigit() or P == ""
 
 if __name__ == "__main__":
-    app_name = 'Sheet Comparitor'
+    app_name = 'Sheet Comparator'
     # Get the platform-specific configuration directory
     config_dir = user_data_dir(appname=app_name, appauthor='seanntxj', roaming=False)  
     # Construct the configuration file path
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     # Window and widgets
     root = tk.Tk()
-    root.title("Sheet Comparitor")
+    root.title("Sheet Comparator")
     root.geometry('870x170')
     use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
 

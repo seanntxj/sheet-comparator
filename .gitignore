@@ -49,6 +49,7 @@ Thumbs.db
 *.wmv
 *.csv
 *.xlsx
+/test_data
 
 # Python venv
 /venv
