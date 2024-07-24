@@ -91,7 +91,7 @@ def xlsx_to_csv(excel_file_path: str) -> str:
         if i == 0: # if its the first row, it is the fields
             fields = row 
         else: # rest is normal data rows
-            rest.append([(u"" if cell == None else cell) for cell in row]) # Ensure empty cells are blanks rather than "None" objects
+            rest.append([(u"" if cell == None else str(cell)) for cell in row]) # Ensure empty cells are blanks rather than "None" objects
     wb.close()
     return fields, rest 
 
