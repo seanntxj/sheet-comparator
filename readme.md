@@ -1,4 +1,4 @@
-# Sheet Comparitor
+# Sheet Comparator
 
 Very versatile sheet comparison tool. Speed tbd.
 
