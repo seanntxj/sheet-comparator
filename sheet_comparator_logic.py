@@ -88,10 +88,10 @@ def xlsx_to_csv(excel_file_path: str) -> str:
     fields = [] 
     rest = []
     for i, row in enumerate(sh): 
-        if i == 0: 
+        if i == 0: # if its the first row, it is the fields
             fields = row 
-        else: 
-            rest.append(row)
+        else: # rest is normal data rows
+            rest.append([(u"" if cell == None else cell) for cell in row]) # Ensure empty cells are blanks rather than "None" objects
     wb.close()
     return fields, rest 
 
