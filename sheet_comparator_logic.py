@@ -113,8 +113,7 @@ def find_discrepancies(uploaded_file_path: str,
         A list containing strings of the discrepancies found.
     """
     # Update status
-    if status_to_show_in_gui:
-        status_to_show_in_gui('Setting up...')
+    previous_update = 0 # For GUI 
 
     # If Excel file given, convert to CSV first
     if uploaded_file_path.split('.')[-1] == 'csv': 
@@ -156,13 +155,19 @@ def find_discrepancies(uploaded_file_path: str,
     
     # Update status
     if status_to_show_in_gui:
-        status_to_show_in_gui('Caching uploaded csv...')
+        status_to_show_in_gui(f'Caching uploaded sheet {issues.name}')
+    if progress_to_show_in_gui != None:
+        progress_to_show_in_gui(0)
 
     # Hash the uploaded csv file based on its key value
     uploaded_hashed_csv = {}
     for row in uploaded_csv_reader:
         uploaded_hashed_csv[row[uploaded_file_identifying_field_index]] = row
-    
+
+    # Update status
+    if progress_to_show_in_gui != None:
+        progress_to_show_in_gui(25)
+
     # Hash the indexes of the uploaded csv fields
     uploaded_hashed_fields_index = issues.update_uploaded_hashed_fields_idxs()
 
@@ -174,14 +179,11 @@ def find_discrepancies(uploaded_file_path: str,
 
     # Update status
     if status_to_show_in_gui:
-        status_to_show_in_gui('Comparing csvs...')
+        status_to_show_in_gui(f'Comparing sheet {issues.name}')
 
     # For each row in the original csv file
     # Check if it exists in the uploaded csv file
     # If it exists, compare that row of values to the original 
-    previous_update = 0 # For GUI 
-    # pbar = tqdm(total=len(uploaded_hashed_csv), desc="Comparing rows")
-
     # Each ROW 
     for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
         if row_from_ori_csv[original_file_identifying_field_index] not in uploaded_hashed_csv:
@@ -190,12 +192,8 @@ def find_discrepancies(uploaded_file_path: str,
 
         row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[original_file_identifying_field_index]]
 
-        mismatched_fields = []
-        # for col_num in range(len(row_from_ori_csv)):
-        #     if row_from_uploaded_csv[col_num] != row_from_ori_csv[col_num]:
-        #         mismatched_fields.append(col_num)
-
         # Each COLUMN (CELL)
+        mismatched_fields = []
         for col_num in range(len(fields_ori_csv)):
             cell_from_ori_csv = row_from_ori_csv[col_num]
             cell_from_upl_csv = row_from_uploaded_csv[uploaded_hashed_fields_index[fields_ori_csv[col_num]]]
@@ -204,9 +202,8 @@ def find_discrepancies(uploaded_file_path: str,
         if len(mismatched_fields) > 0: 
             issues.insert_issue(row_from_ori_csv,row_from_uploaded_csv,mismatched_fields)
         
-        # GUI and TQDM progress bars
-        # pbar.update(1)
-        progress_in_percentage = min( int(row_num / len(uploaded_hashed_csv)*100) + 1, 100)
+        # GUI progress bars
+        progress_in_percentage = min( int(row_num / len(uploaded_hashed_csv)*75) + 25, 100)
         if progress_to_show_in_gui != None and previous_update != progress_in_percentage:
             progress_to_show_in_gui(progress_in_percentage)
             previous_update = progress_in_percentage
@@ -220,10 +217,13 @@ def find_discrepancies(uploaded_file_path: str,
     except UnboundLocalError: 
         pass
 
+    # Update status
+    if status_to_show_in_gui:
+        status_to_show_in_gui(f'Finished comparing {issues.name}')
+
     return issues
 
 def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = False, progress_bar = None, progress_status = None) -> None: 
-
     # Writing logic for a text file
     def write_to_text():
         f = open(log_file_path, 'a+')
@@ -316,8 +316,12 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
     folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
     if not os.path.isdir(folder_path_for_job):
         os.mkdir(folder_path_for_job)
-    for issue in issue_main_list: 
-        write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
+    for i, issue in enumerate(issue_main_list): 
+        if issue.has_issues():
+            if progress_bar != None and progress_status != None:
+                progress_bar(i/len(issue_main_list)*100)
+                progress_status(f'Creating issue log for {issue.name}')
+            write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
     return 
 
 def load_mapping_uploaded_to_original():
@@ -355,9 +359,10 @@ def compare_csv_folders(uploaded_folder_path: str,
             status_to_show_in_gui(f'STOP: "{uploaded_file_name}", cannot any original file that starts with "{uploaded_file_name.split("-")[0]}".')
             break
 
-        status_to_show_in_gui(f'Processing file {uploaded_file_name}')
         issues_list.append(find_discrepancies(uploaded_file_path=uploaded_file_path,
                            original_file_path=original_file_path,
+                           status_to_show_in_gui=status_to_show_in_gui,
+                           progress_to_show_in_gui=progress_to_show_in_gui,
                            uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
                            original_file_identifying_field_index=original_file_identifying_field_index))
         status_to_show_in_gui(f'Completed processing of {uploaded_file_name}')
