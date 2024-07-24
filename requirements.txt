@@ -1,4 +1,3 @@
-pandas
-tqdm
-nuitka
+nuitka==2.3.11
 openpyxl
+appdirs
