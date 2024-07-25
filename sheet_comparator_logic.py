@@ -18,7 +18,18 @@ from openpyxl import Workbook, styles, load_workbook
 import threading
 from queue import Queue, Empty
 
-
+class Progress:
+    def __init__(self, total_work, progress_bar):
+        self.total_work = total_work
+        self.completed_work = 0
+        self.lock = threading.Lock()
+        self.progress_bar = progress_bar
+    def update_progress(self):      
+        with self.lock:
+            if self.progress_bar:
+                self.completed_work += 1 
+                self.progress_bar(self.completed_work/self.total_work*100)
+        return
 class NATURE_OF_ISSUES(Enum): 
     OK = "No issues found."
     DISCREPANCY = "Discrepancies found, please check the issue log."
@@ -311,6 +322,8 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
 
     if progress_status != None: 
         progress_status(f'Logging issues to {folder_name}')
+    if progress_bar: 
+        progress_bar(0)
 
     # Check if there are any valid issues to log
     has_issues_in_general = any(item.has_issues() for item in issue_main_list)
@@ -328,32 +341,26 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
     task_queue = Queue()
 
     # Create a lock for thread-safe progress updates
-    progress_lock = threading.Lock()
-    completed_tasks = 0 
-    def finished_write(completed_tasks: int): 
-        with progress_lock: 
-            completed_tasks += 1
-            progress_bar(completed_tasks/len(issue_main_list)*100)
-        return
+    p = Progress(len(issue_main_list), progress_bar)
 
     # Put each issue into the queue 
     for issue in issue_main_list:
         task_queue.put(issue)
 
-    def worker(task_queue: Queue):
+    def worker(task_queue: Queue, p:Progress):
         """Worker thread function that processes tasks from the queue."""
         while True:
             try:
                 issue = task_queue.get(False)  # Try to get an item without blocking
                 write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
-                finished_write(completed_tasks)
+                p.update_progress()
                 task_queue.task_done()
             except Empty: 
                 break
 
     # Create and start threads
     num_threads = min(len(issue_main_list), os.cpu_count())  # Use maximum available cores
-    threads = [threading.Thread(target=worker, args=(task_queue,)) for _ in range(num_threads)]
+    threads = [threading.Thread(target=worker, args=(task_queue,p)) for _ in range(num_threads)]
     for thread in threads:
         thread.start()
 
@@ -374,29 +381,60 @@ def compare_csv_folders(uploaded_folder_path: str,
                        uploaded_file_identifying_field_index: int = 0,
                        original_file_identifying_field_index: int = 0) -> list[ISSUES_MAIN]:
     
+    if status_to_show_in_gui: 
+        status_to_show_in_gui('Processing files.')
+    
+    # Find all valid sheets
     uploaded_file_names = [item for item in os.listdir(uploaded_folder_path) if item.endswith('.csv') or item.endswith('.xlsx')]   
     original_file_names = [item for item in os.listdir(original_folder_path) if item.endswith('.csv') or item.endswith('.xlsx')]
+    # Hash the identifier to the original sheet file path
     original_file_paths_hash = {} 
-    
     for item in original_file_names:
         original_file_paths_hash[item.split('-')[0]] =  f'{original_folder_path}/{item}'
 
+    q = Queue()
+    p = Progress(len(uploaded_file_names), progress_to_show_in_gui)
+    issue_list_append_lock = threading.Lock()
     issues_list: list[ISSUES_MAIN] = []
+    def add_to_issues_list(issues: ISSUES_MAIN):
+        with issue_list_append_lock:
+            issues_list.append(issues)
+        return
     
-    for i, uploaded_file_name in enumerate(uploaded_file_names):
-        uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
-        try:
-            original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
-        except KeyError: 
-            raise KeyError(f'STOP: "{uploaded_file_name}", cannot find any original file that starts with "{ori_file_name.split("-")[0]}".')
+    for uploaded_file_name in uploaded_file_names:
+        q.put(uploaded_file_name)
+    
+    def worker(task_queue: Queue, p:Progress):  
+        while True:
+            try: 
+                uploaded_file_name = task_queue.get(False) 
+                uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
+                try:
+                    original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
+                except KeyError: 
+                    raise KeyError(f'STOP: "{uploaded_file_name}", cannot find any original file that starts with "{ori_file_name.split("-")[0]}".')
+                result = find_discrepancies(uploaded_file_path=uploaded_file_path,
+                            original_file_path=original_file_path,
+                            uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
+                            original_file_identifying_field_index=original_file_identifying_field_index)
+                add_to_issues_list(result)
+                p.update_progress() 
+                task_queue.task_done()
+            except Empty: 
+                break
+    
+    # Create and start threads
+    num_threads = min(len(uploaded_file_names), os.cpu_count())  # Use maximum available cores
+    threads = [threading.Thread(target=worker, args=(q,p)) for _ in range(num_threads)]
+    for thread in threads:
+        thread.start()
 
-        issues_list.append(find_discrepancies(uploaded_file_path=uploaded_file_path,
-                           original_file_path=original_file_path,
-                           status_to_show_in_gui=status_to_show_in_gui,
-                           progress_to_show_in_gui=progress_to_show_in_gui,
-                           uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
-                           original_file_identifying_field_index=original_file_identifying_field_index))
-        status_to_show_in_gui(f'Completed processing of {uploaded_file_name}')
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+    
+    if status_to_show_in_gui: 
+        status_to_show_in_gui('Finished processing files.')
 
     return issues_list
 
@@ -410,20 +448,26 @@ if __name__ == "__main__":
             original_file_identifying_field_index = 0
 
         # Give error and quit script if files cannot be found
-        if not (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
-            raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
-        
-        issues = find_discrepancies(uploaded_file_name,
-                                    ori_file_name, 
-                                    uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
-                                    original_file_identifying_field_index=original_file_identifying_field_index)
-        write_issues(issues, 'test_data')
+        if (os.path.isfile(ori_file_name) and os.path.isfile(uploaded_file_name)):
+            issues = find_discrepancies(uploaded_file_name,
+                                        ori_file_name, 
+                                        uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
+                                        original_file_identifying_field_index=original_file_identifying_field_index)
+            write_issues(issues, 'test_data')
+            return
+
+        if (os.path.isdir(ori_file_name) and os.path.isdir(uploaded_file_name)):
+            res = compare_csv_folders(uploaded_folder_path=uploaded_file_name,
+                                            original_folder_path=ori_file_name,
+                                            uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
+                                            original_file_identifying_field_index=original_file_identifying_field_index)
+            write_multiple_issues(issue_main_list=res, output_dir='test_data')
+            return
+
+        raise Exception(f'Files {ori_file_name} or {uploaded_file_name} cannot be found. Terminating script.')
 
     # Run without GUI or use in notebook 
-    try:
-        name_of_script = sys.argv[0]
-        ori_file_name = sys.argv[1]
-        uploaded_file_name = sys.argv[2]
-        demo()
-    except Exception as e:
-        print(e)
+    name_of_script = sys.argv[0]
+    ori_file_name = sys.argv[1]
+    uploaded_file_name = sys.argv[2]
+    demo()
