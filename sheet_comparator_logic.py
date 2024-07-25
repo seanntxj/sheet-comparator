@@ -15,6 +15,9 @@ import os.path
 import time
 from enum import Enum
 from openpyxl import Workbook, styles, load_workbook
+import threading
+from queue import Queue, Empty
+
 
 class NATURE_OF_ISSUES(Enum): 
     OK = "No issues found."
@@ -304,22 +307,59 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     return
 
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, progress_status = None, output_dir: str = "", output_to_excel: bool = True) -> None:
+
+    # Check if there are any valid issues to log
     has_issues_in_general = any(item.has_issues() for item in issue_main_list)
-    if has_issues_in_general:
-        folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
-        if not os.path.isdir(folder_path_for_job):
-            os.mkdir(folder_path_for_job)
-        for i, issue in enumerate(issue_main_list): 
-            if issue.has_issues():
-                if progress_bar != None and progress_status != None:
-                    progress_bar(i/len(issue_main_list)*100)
-                    progress_status(f'Creating issue log for {issue.name}')
-                write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
-        if progress_status != None: 
-            progress_status(f'Done! Check issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.')
+    # If no valid issues to log, exit the function and tell user 
     if progress_status != None and has_issues_in_general == False: 
         progress_status(f'Done! No issues found ᕙ(⇀‸↼‶)ᕗ')
-    return 
+        return
+    
+    # Create a folder for the current log job
+    folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+    if not os.path.isdir(folder_path_for_job):
+        os.mkdir(folder_path_for_job)
+
+    # Creating a queue of tasks to be completed 
+    task_queue = Queue()
+
+    # Create a lock for thread-safe progress updates
+    progress_lock = threading.Lock()
+    completed_tasks = 0 
+    def finished_write(completed_tasks: int): 
+        with progress_lock: 
+            completed_tasks += 1
+        return
+
+    # Put each issue into the queue 
+    for issue in issue_main_list:
+        task_queue.put(issue)
+
+    def worker(task_queue: Queue):
+        """Worker thread function that processes tasks from the queue."""
+        while True:
+            try:
+                issue = task_queue.get(False)  # Try to get an item without blocking
+                write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
+                finished_write(completed_tasks)
+                task_queue.task_done()
+            except Empty: 
+                break
+
+    # Create and start threads
+    num_threads = min(len(issue_main_list), os.cpu_count())  # Use maximum available cores
+    threads = [threading.Thread(target=worker, args=(task_queue,)) for _ in range(num_threads)]
+    for thread in threads:
+        thread.start()
+
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+
+    if progress_status != None: 
+        progress_status(f'Done! Check issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.')
+
+
 
 def compare_csv_folders(uploaded_folder_path: str, 
                        original_folder_path: str, 
