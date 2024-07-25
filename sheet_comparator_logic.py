@@ -82,16 +82,16 @@ class ISSUES_MAIN:
         self.issue_list.append(issue_item)
         return issue_item
 
-def xlsx_to_csv(excel_file_path: str) -> str:
+def xlsx_to_csv(excel_file_path: str) -> tuple:
     wb = load_workbook(excel_file_path)
     sh = wb.active.values
-    fields = [] 
-    rest = []
+    fields = [] # headers of the sheet
+    rest = [] # the data/content of the sheet
     for i, row in enumerate(sh): 
         if i == 0: # if its the first row, it is the fields
             fields = row 
         else: # rest is normal data rows
-            rest.append([(u"" if cell == None else str(cell)) for cell in row]) # Ensure empty cells are blanks rather than "None" objects
+            rest.append([(u"" if cell == None else str(cell)) for cell in row]) # Ensure empty cells are blanks rather than "None" objects, also convert to string to prevent typing discrepancies
     wb.close()
     return fields, rest 
 
@@ -120,7 +120,6 @@ def find_discrepancies(uploaded_file_path: str,
         # Read uploaded csv file
         f_uploaded = open(uploaded_file_path, 'r')
         uploaded_csv_reader = csv.reader(f_uploaded)
-
         # Field names 
         fields_uploaded_csv = next(uploaded_csv_reader)
     else:
@@ -129,7 +128,6 @@ def find_discrepancies(uploaded_file_path: str,
         # Read original csv file
         f_ori = open(original_file_path, 'r')
         ori_csv_reader = csv.reader(f_ori)
-        
         # Field names 
         fields_ori_csv = next(ori_csv_reader)
     else:
@@ -330,18 +328,6 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
         progress_status(f'Done! No issues found ᕙ(⇀‸↼‶)ᕗ')
     return 
 
-
-def load_mapping_uploaded_to_original():
-    f = open('mapping.csv', 'r')
-    mapping_csv_reader = csv.reader(f)
-    fields = next(mapping_csv_reader)
-    mapping = {}
-    for _, row in enumerate(mapping_csv_reader):
-        original, uploaded = row[0], row[1]
-        mapping[original] = uploaded
-        mapping[uploaded] = original
-    return mapping
-
 def compare_csv_folders(uploaded_folder_path: str, 
                        original_folder_path: str, 
                        progress_to_show_in_gui = None,
@@ -395,11 +381,14 @@ if __name__ == "__main__":
                                     original_file_identifying_field_index=original_file_identifying_field_index)
         write_issues(issues, 'test_data')
 
-    # Get input parameters, if not use default names and column index for identifier
-    name_of_script = sys.argv[0]
-    ori_file_name = sys.argv[1]
-    uploaded_file_name = sys.argv[2]
-    demo()
+    # Run without GUI or use in notebook 
+    try:
+        name_of_script = sys.argv[0]
+        ori_file_name = sys.argv[1]
+        uploaded_file_name = sys.argv[2]
+        demo()
+    except Exception as e:
+        print(e)
 
 
 

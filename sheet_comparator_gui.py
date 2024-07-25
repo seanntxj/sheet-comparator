@@ -42,7 +42,7 @@ def update_progress_status(status: str) -> None:
     output_label.config(text=status)
     root.update_idletasks() # Update the GUI to reflect progress bar change
 
-def compare_csvs_aux(item1_path: str, 
+def compare_sheets_aux(item1_path: str, 
                       item2_path: str, 
                       compare_button: tk.Button, 
                       excel_output: bool,
@@ -125,7 +125,7 @@ def compare_button_click():
         output_label.config(text='Cannot find folder for output.')
         return
 
-    comparison_thread = threading.Thread(target=compare_csvs_aux, args=(file1_path, 
+    comparison_thread = threading.Thread(target=compare_sheets_aux, args=(file1_path, 
                                                                 file2_path, 
                                                                 compare_button, 
                                                                 excel_output, 
