@@ -23,11 +23,10 @@ class NATURE_OF_ISSUES(Enum):
     FIELDS_LENGTH_MISMATCH = "The number of columns in each csv file don't match. Please check for any trailing commas with notepad."
     
 class ISSUE_ITEM:
-    def __init__(self, original_row: list, uploaded_row: list, mismatched_columns_indexes: list, mismatched_columns_indexes_upl: list) -> None:
+    def __init__(self, original_row: list, uploaded_row: list, mismatched_columns_indexes: list) -> None:
         self.original_row = original_row
         self.uploaded_row = uploaded_row
         self.mismatched_columns_indexes = mismatched_columns_indexes
-        self.mismatched_columns_indexes_upl = mismatched_columns_indexes_upl
     
 class ISSUES_MAIN:
     def __init__(self) -> None:
@@ -55,30 +54,24 @@ class ISSUES_MAIN:
                 row_to_indicate_missing_row.append('MISSING')
             else: 
                 row_to_indicate_missing_row.append(value_of_identifier)
-        issue_item = ISSUE_ITEM(original_row, row_to_indicate_missing_row, [column_of_identifier], [column_of_identifier])
+        issue_item = ISSUE_ITEM(original_row, row_to_indicate_missing_row, [column_of_identifier])
         self.issue_list.append(issue_item)
         return issue_item
 
     def insert_issue(self, original_row: list, uploaded_row: list, columns_where_discrepancy_is_found: list[int]):
-        # TODO remove redundant columns_where_discrepancy_is_found_upl
-        # columns_where_discrepancy_is_found_upl = []
-        # for column_idx in columns_where_discrepancy_is_found:
-        #     columns_where_discrepancy_is_found_upl.append(self.uploaded_hashed_fields_idxs[self.original_fields[column_idx]])
-        # Uploaded row mapped to original row's columns 
         mapped_uploaded_row = [] 
         for ori_field in self.original_fields:
             upl_field_idx = self.uploaded_hashed_fields_idxs[ori_field]
             value_from_upl_sheet = uploaded_row[upl_field_idx]
             mapped_uploaded_row.append(value_from_upl_sheet)
-        issue_item = ISSUE_ITEM(original_row, mapped_uploaded_row, columns_where_discrepancy_is_found, columns_where_discrepancy_is_found)
+        issue_item = ISSUE_ITEM(original_row, mapped_uploaded_row, columns_where_discrepancy_is_found)
         self.issue_list.append(issue_item)
         return issue_item
 
     def insert_missing_column(self, original_columns, uploaded_columns, columns_missing_from_uploaded: list[str]):
         issue_item = ISSUE_ITEM(original_row=original_columns, 
                                  uploaded_row=uploaded_columns, 
-                                 mismatched_columns_indexes=columns_missing_from_uploaded, 
-                                 mismatched_columns_indexes_upl=columns_missing_from_uploaded)
+                                 mismatched_columns_indexes=columns_missing_from_uploaded)
         self.issue_list.append(issue_item)
         return issue_item
 
@@ -234,7 +227,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
                     original_row += f' {item}'
             uploaded_row = 'UPL |'
             for x, item in enumerate(row.uploaded_row): 
-                if x in row.mismatched_columns_indexes_upl:
+                if x in row.mismatched_columns_indexes:
                     uploaded_row += f' <|{item}|>'
                 else:
                     uploaded_row += f' {item}'
@@ -286,7 +279,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
                 current_column += 1    
             
             # Highlight the columns that have discrepancies
-            for mismatched_column_index in issue.mismatched_columns_indexes_upl:
+            for mismatched_column_index in issue.mismatched_columns_indexes:
                 # Ensure to offset the column as the first column is always the identifier
                 sheet.cell(row=current_row, column=mismatched_column_index+2).fill = styles.PatternFill(fill_type="solid", fgColor="FF8080")
 
