@@ -307,6 +307,10 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     return
 
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, progress_status = None, output_dir: str = "", output_to_excel: bool = True) -> None:
+    folder_name = f'issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+
+    if progress_status != None: 
+        progress_status(f'Logging issues to {folder_name}')
 
     # Check if there are any valid issues to log
     has_issues_in_general = any(item.has_issues() for item in issue_main_list)
@@ -316,7 +320,7 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
         return
     
     # Create a folder for the current log job
-    folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+    folder_path_for_job = f'{output_dir}/{folder_name}'
     if not os.path.isdir(folder_path_for_job):
         os.mkdir(folder_path_for_job)
 
@@ -329,6 +333,7 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
     def finished_write(completed_tasks: int): 
         with progress_lock: 
             completed_tasks += 1
+            progress_bar(completed_tasks/len(issue_main_list)*100)
         return
 
     # Put each issue into the queue 
@@ -357,8 +362,9 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
         thread.join()
 
     if progress_status != None: 
-        progress_status(f'Done! Check issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.')
+        progress_status(f'Done! Check issues_{folder_name}.')
 
+    return
 
 
 def compare_csv_folders(uploaded_folder_path: str, 
