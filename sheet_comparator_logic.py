@@ -217,7 +217,7 @@ def find_discrepancies(uploaded_file_path: str,
 def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = False, progress_bar = None, progress_status = None) -> None: 
     # Writing logic for a text file
     def write_to_text():
-        f = open(log_file_path, 'a+')
+        f = open(log_file_path, 'a+', encoding='utf-8')
         for row in issues.issue_list:
             original_row = 'ORI |'
             for x, item in enumerate(row.original_row): 
