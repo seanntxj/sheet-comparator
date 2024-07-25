@@ -150,7 +150,7 @@ if __name__ == "__main__":
     # Window and widgets
     root = tk.Tk()
     root.title("Sheet Comparator")
-    root.geometry('870x170')
+    root.geometry('870x190')
     use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
 
     file_selector_frame = tk.Frame(root)
@@ -221,11 +221,18 @@ if __name__ == "__main__":
     output_dir_textbox.pack(side=tk.LEFT, fill=tk.X, padx=10, expand=True)  # Pack textbox to left, fill remaining space
 
     output_dir_browse_button = tk.Button(output_dir_frame, text="Folder", command=lambda: get_directory(output_dir_var))
-    output_dir_browse_button.pack(side=tk.LEFT)  # Pack button to right
+    output_dir_browse_button.pack(side=tk.LEFT) 
+
+    # Progress bar placed below the frame for file selections
+    progress_frame = tk.Frame(root,borderwidth=0.5, relief="flat")
+    progress_frame.pack(fill=tk.X, padx=25)
 
     progress_var = tk.IntVar()
-    progress_bar = ttk.Progressbar(root, maximum=100, variable=progress_var)
-    progress_bar.pack(fill=tk.X, padx=25)  # Pack the progress bar with padding
+    progress_bar = ttk.Progressbar(progress_frame, maximum=100, variable=progress_var)
+    progress_bar.pack(fill=tk.X)  # Pack the progress bar with padding
+
+    output_label = tk.Label(progress_frame, text="")
+    output_label.pack(fill=tk.X)
 
     excel_checkbox = tk.Checkbutton(
         root, text="Output to Excel", variable=use_excel
@@ -235,8 +242,6 @@ if __name__ == "__main__":
     compare_button = tk.Button(root, text="Compare", command=compare_button_click)
     compare_button.pack(side=tk.RIGHT, padx=25)
 
-    output_label = tk.Label(root, text="")
-    output_label.pack()
 
     root.mainloop()
 
