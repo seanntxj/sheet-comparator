@@ -341,9 +341,8 @@ def compare_csv_folders(uploaded_folder_path: str,
         uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
         try:
             original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
-        except: 
-            status_to_show_in_gui(f'STOP: "{uploaded_file_name}", cannot find any original file that starts with "{uploaded_file_name.split("-")[0]}".')
-            break
+        except KeyError: 
+            raise KeyError(f'STOP: "{uploaded_file_name}", cannot find any original file that starts with "{uploaded_file_name.split("-")[0]}".')
 
         issues_list.append(find_discrepancies(uploaded_file_path=uploaded_file_path,
                            original_file_path=original_file_path,

@@ -77,7 +77,8 @@ def compare_sheets_aux(item1_path: str,
             
         progress_var.set(100)
     except Exception as e:
-        update_progress_status(f'ERROR: {e}')
+        error_type = type(e).__name__
+        update_progress_status(f'ERROR: {error_type}: {e}')
         progress_var.set(0)
 
     compare_button.config(state=tk.NORMAL)
