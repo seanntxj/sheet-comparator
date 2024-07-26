@@ -306,7 +306,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, progress_status = None, output_dir: str = "", output_to_excel: bool = True) -> None:
     has_issues_in_general = any(item.has_issues() for item in issue_main_list)
     if has_issues_in_general:
-        folder_path_for_job = f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
+        folder_path_for_job = str(f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}')
         if not os.path.isdir(folder_path_for_job):
             os.mkdir(folder_path_for_job)
         for i, issue in enumerate(issue_main_list): 
@@ -316,7 +316,7 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
                     progress_status(f'Creating issue log for {issue.name}')
                 write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
         if progress_status != None: 
-            progress_status(f'Done! Check issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}.')
+            progress_status(f'Done! Check {folder_path_for_job}.')
     if progress_status != None and has_issues_in_general == False: 
         progress_status(f'Done! No issues found ᕙ(⇀‸↼‶)ᕗ')
     return 
