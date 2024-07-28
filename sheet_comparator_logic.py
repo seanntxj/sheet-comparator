@@ -106,7 +106,8 @@ def find_discrepancies(uploaded_file_path: str,
                        progress_to_show_in_gui = None,
                        status_to_show_in_gui = None,
                        uploaded_file_identifying_field_index: int = 0,
-                       original_file_identifying_field_index: int = 0) -> ISSUES_MAIN:
+                       original_file_identifying_field_index: int = 0,
+                       ignore_leading_and_trailing_whitespaces: bool = False) -> ISSUES_MAIN:
     """
     Finds the difference between two CSV files. 
 
@@ -203,10 +204,9 @@ def find_discrepancies(uploaded_file_path: str,
         for col_num in range(len(fields_ori_csv)):
             cell_from_ori_csv = row_from_ori_csv[col_num]
             cell_from_upl_csv = row_from_uploaded_csv[uploaded_hashed_fields_index[fields_ori_csv[col_num]]]
-            # TODO Ignore trailing whitespaces feature
-            # if ignore_trailing_whitespaces:
-            #     cell_from_ori_csv = cell_from_ori_csv.strip() 
-            #     cell_from_upl_csv = cell_from_upl_csv.strip()
+            if ignore_leading_and_trailing_whitespaces:
+                cell_from_ori_csv = cell_from_ori_csv.strip() 
+                cell_from_upl_csv = cell_from_upl_csv.strip()
             if cell_from_ori_csv != cell_from_upl_csv:
                 mismatched_fields.append(col_num)
         if len(mismatched_fields) > 0: 
@@ -387,7 +387,8 @@ def compare_csv_folders(uploaded_folder_path: str,
                        progress_to_show_in_gui = None,
                        status_to_show_in_gui = None,
                        uploaded_file_identifying_field_index: int = 0,
-                       original_file_identifying_field_index: int = 0) -> list[ISSUES_MAIN]:
+                       original_file_identifying_field_index: int = 0,
+                       ignore_leading_and_trailing_whitespaces: bool = False) -> list[ISSUES_MAIN]:
     
     if status_to_show_in_gui: 
         status_to_show_in_gui('Processing files.')
@@ -424,7 +425,8 @@ def compare_csv_folders(uploaded_folder_path: str,
                 result = find_discrepancies(uploaded_file_path=uploaded_file_path,
                             original_file_path=original_file_path,
                             uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
-                            original_file_identifying_field_index=original_file_identifying_field_index)
+                            original_file_identifying_field_index=original_file_identifying_field_index,
+                            ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces)
                 add_to_issues_list(result)
                 p.update_progress() 
                 task_queue.task_done()

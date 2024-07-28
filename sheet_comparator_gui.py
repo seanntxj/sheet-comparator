@@ -33,7 +33,7 @@ def load_settings(defaults: dict, config_file_path: str):
         return defaults
     with open(config_file_path, 'r') as f:
         user_settings =  json.load(f)
-        combined_settings = {**defaults, **user_settings}   
+        combined_settings = {**defaults, **user_settings} # Merge defaults and user settings, prioritise user settings 
         return combined_settings
 
 def update_progress_bar(progress_value: int) -> None:
@@ -65,7 +65,8 @@ def compare_sheets_aux(item1_path: str,
                                 progress_to_show_in_gui=update_progress_bar,
                                 status_to_show_in_gui=update_progress_status,
                                 uploaded_file_identifying_field_index=index2_identifier,
-                                original_file_identifying_field_index=index1_identifier)
+                                original_file_identifying_field_index=index1_identifier,
+                                ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces_value.get())
             write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
 
         # Run single file logic if its a file path being provided
@@ -75,7 +76,8 @@ def compare_sheets_aux(item1_path: str,
                                     progress_to_show_in_gui=update_progress_bar,
                                     status_to_show_in_gui=update_progress_status,
                                     uploaded_file_identifying_field_index=index2_identifier,
-                                    original_file_identifying_field_index=index1_identifier)
+                                    original_file_identifying_field_index=index1_identifier,
+                                    ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces_value.get())
             write_issues(res, output_dir, excel_output, update_progress_bar, update_progress_status)
             
         progress_var.set(100)
