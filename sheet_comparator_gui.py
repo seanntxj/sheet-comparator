@@ -6,7 +6,7 @@ import threading
 import json
 from appdirs import user_data_dir
 import os
-from sheet_comparator_logic import find_discrepancies, write_issues, compare_csv_folders, write_multiple_issues
+from sheet_comparator_logic import find_discrepancies, write_issues, compare_csv_folders, compare_csv_folders_single_threaded, write_multiple_issues, write_multiple_issues_single_threaded
 
 TESTING = False
 DEFAULT_CONFIG =  { 
@@ -60,14 +60,14 @@ def compare_sheets_aux(item1_path: str,
     try:
         # Run bulk logic if its a folder path being provided 
         if ( os.path.isdir(item1_path) and os.path.isdir(item2_path) ):
-            res = compare_csv_folders(uploaded_folder_path=item2_path,
+            res = compare_csv_folders_single_threaded(uploaded_folder_path=item2_path,
                                 original_folder_path=item1_path,
                                 progress_to_show_in_gui=update_progress_bar,
                                 status_to_show_in_gui=update_progress_status,
                                 uploaded_file_identifying_field_index=index2_identifier,
                                 original_file_identifying_field_index=index1_identifier,
                                 ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces_value.get())
-            write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
+            write_multiple_issues_single_threaded(res, update_progress_bar, update_progress_status, output_dir, excel_output)
 
         # Run single file logic if its a file path being provided
         if ( os.path.isfile(item1_path) and os.path.isfile(item2_path) ):
@@ -96,8 +96,8 @@ def get_file(file_path_var: tk.StringVar):
     file_path = filedialog.askopenfilename(
         title="Select CSV or Excel file",
         filetypes=(
-            ("CSV Files", "*.csv"),
             ("Excel Files", "*.xlsx"),
+            ("CSV Files", "*.csv"),
         )
     )    
     if file_path:

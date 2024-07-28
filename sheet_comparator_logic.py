@@ -381,6 +381,23 @@ def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = Non
 
     return
 
+def write_multiple_issues_single_threaded(issue_main_list: list[ISSUES_MAIN], progress_bar = None, progress_status = None, output_dir: str = "", output_to_excel: bool = True) -> None:
+    has_issues_in_general = any(item.has_issues() for item in issue_main_list)
+    if has_issues_in_general:
+        folder_path_for_job = str(f'{output_dir}/issues_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}')
+        if not os.path.isdir(folder_path_for_job):
+            os.mkdir(folder_path_for_job)
+        for i, issue in enumerate(issue_main_list): 
+            if issue.has_issues():
+                if progress_bar != None and progress_status != None:
+                    progress_bar(i/len(issue_main_list)*100)
+                    progress_status(f'Creating issue log for {issue.name}')
+                write_issues(issue, output_dir=folder_path_for_job, use_excel=output_to_excel)
+        if progress_status != None: 
+            progress_status(f'Done! Check {folder_path_for_job}.')
+    if progress_status != None and has_issues_in_general == False: 
+        progress_status(f'Done! No issues found ᕙ(⇀‸↼‶)ᕗ')
+    return 
 
 def compare_csv_folders(uploaded_folder_path: str, 
                        original_folder_path: str, 
@@ -445,6 +462,41 @@ def compare_csv_folders(uploaded_folder_path: str,
     
     if status_to_show_in_gui: 
         status_to_show_in_gui('Finished processing files.')
+
+    return issues_list
+
+def compare_csv_folders_single_threaded(uploaded_folder_path: str, 
+                       original_folder_path: str, 
+                       progress_to_show_in_gui = None,
+                       status_to_show_in_gui = None,
+                       uploaded_file_identifying_field_index: int = 0,
+                       original_file_identifying_field_index: int = 0,
+                       ignore_leading_and_trailing_whitespaces: bool = False) -> list[ISSUES_MAIN]:
+    
+    uploaded_file_names = [item for item in os.listdir(uploaded_folder_path) if item.endswith('.csv') or item.endswith('.xlsx')]   
+    original_file_names = [item for item in os.listdir(original_folder_path) if item.endswith('.csv') or item.endswith('.xlsx')]
+    original_file_paths_hash = {} 
+    
+    for item in original_file_names:
+        original_file_paths_hash[item.split('-')[0]] =  f'{original_folder_path}/{item}'
+
+    issues_list: list[ISSUES_MAIN] = []
+    
+    for i, uploaded_file_name in enumerate(uploaded_file_names):
+        uploaded_file_path = f'{uploaded_folder_path}/{uploaded_file_name}'
+        try:
+            original_file_path = f'{original_file_paths_hash[uploaded_file_name.split("-")[0]]}'
+        except KeyError: 
+            raise KeyError(f'STOP: "{uploaded_file_name}", cannot find any original file that starts with "{ori_file_name.split("-")[0]}".')
+
+        issues_list.append(find_discrepancies(uploaded_file_path=uploaded_file_path,
+                           original_file_path=original_file_path,
+                           status_to_show_in_gui=status_to_show_in_gui,
+                           progress_to_show_in_gui=progress_to_show_in_gui,
+                           uploaded_file_identifying_field_index=uploaded_file_identifying_field_index,
+                           original_file_identifying_field_index=original_file_identifying_field_index,
+                           ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces))
+        status_to_show_in_gui(f'Completed processing of {uploaded_file_name}')
 
     return issues_list
 
