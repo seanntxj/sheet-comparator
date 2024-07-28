@@ -15,7 +15,8 @@ DEFAULT_CONFIG =  {
                     "upl": "upl_test",
                     "ori_identifier_idx": 1, 
                     "upl_identifier_idx": 1, 
-                    "output_folder": os.getcwd()
+                    "output_folder": os.getcwd(),
+                    "ignore_leading_and_trailing_whitespaces": False,
                     }
 
 def save_settings(config_file_path: str, settings: dict):
@@ -31,7 +32,9 @@ def load_settings(defaults: dict, config_file_path: str):
     if not os.path.exists(config_file_path):  
         return defaults
     with open(config_file_path, 'r') as f:
-        return json.load(f)
+        user_settings =  json.load(f)
+        combined_settings = {**defaults, **user_settings}   
+        return combined_settings
 
 def update_progress_bar(progress_value: int) -> None:
     progress_var.set(progress_value)  # Update progress bar value
@@ -153,6 +156,7 @@ if __name__ == "__main__":
     root.title("Sheet Comparator")
     root.geometry('870x190')
     use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
+    ignore_leading_and_trailing_whitespaces_value = tk.BooleanVar(value=config["ignore_leading_and_trailing_whitespaces"])
 
     file_selector_frame = tk.Frame(root)
     file_selector_frame.pack(fill=tk.X, pady=10)
@@ -235,14 +239,22 @@ if __name__ == "__main__":
     output_label = tk.Label(progress_frame, text="")
     output_label.pack(fill=tk.X)
 
+    # Bottom options frame
+    bottom_options_frame = tk.Frame(root)
+    bottom_options_frame.pack(fill=tk.X)
+
     excel_checkbox = tk.Checkbutton(
-        root, text="Output to Excel", variable=use_excel
+        bottom_options_frame, text="Output to Excel", variable=use_excel
     )
     excel_checkbox.pack(side=tk.LEFT, padx=25)
 
-    compare_button = tk.Button(root, text="Compare", command=compare_button_click)
-    compare_button.pack(side=tk.RIGHT, padx=25)
+    ignore_leading_and_trailing_whitespaces_checkbox = tk.Checkbutton(
+        bottom_options_frame, text="Ignore whitespaces", variable=ignore_leading_and_trailing_whitespaces_value
+    )
+    ignore_leading_and_trailing_whitespaces_checkbox.pack(side=tk.LEFT, padx=25)
 
+    compare_button = tk.Button(bottom_options_frame, text="Compare", command=compare_button_click)
+    compare_button.pack(side=tk.RIGHT, padx=25)
 
     root.mainloop()
 
@@ -252,5 +264,6 @@ if __name__ == "__main__":
        "upl": file2_var.get(),
        "ori_identifier_idx": index1_var.get(),
        "upl_identifier_idx": index2_var.get(),
-       "output_folder": output_dir_var.get()
+       "output_folder": output_dir_var.get(),
+       "ignore_leading_and_trailing_whitespaces": ignore_leading_and_trailing_whitespaces_value.get()
     })
