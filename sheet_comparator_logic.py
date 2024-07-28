@@ -96,7 +96,7 @@ def xlsx_to_csv(excel_file_path: str) -> tuple:
     rest = [] # the data/content of the sheet
     for i, row in enumerate(sh): 
         if i == 0: # if its the first row, it is the fields
-            fields = row 
+            fields = [str(cell) for cell in row if cell != None]
         else: # rest is normal data rows
             rest.append([(u"" if cell == None else str(cell)) for cell in row]) # Ensure empty cells are blanks rather than "None" objects, also convert to string to prevent typing discrepancies
     wb.close()
@@ -305,6 +305,7 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     # Exit prematurely if there's no issues to write
     if len(issues.issue_list) == 0: 
         return
+    
 
     # Get the exact path and file to log 
     log_file_path = f'{output_dir}/issues_{issues.name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
@@ -315,6 +316,9 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
         log_file_path += '.txt'
         write_to_text()
     
+    if progress_status:
+        progress_status(f'Wrote issues to {log_file_path}')
+
     return
 
 def write_multiple_issues(issue_main_list: list[ISSUES_MAIN], progress_bar = None, progress_status = None, output_dir: str = "", output_to_excel: bool = True) -> None:
