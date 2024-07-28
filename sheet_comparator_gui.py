@@ -17,6 +17,7 @@ DEFAULT_CONFIG =  {
                     "upl_identifier_idx": 1, 
                     "output_folder": os.getcwd(),
                     "ignore_leading_and_trailing_whitespaces": False,
+                    "multithreaded": False,
                     }
 
 def save_settings(config_file_path: str, settings: dict):
@@ -60,14 +61,24 @@ def compare_sheets_aux(item1_path: str,
     try:
         # Run bulk logic if its a folder path being provided 
         if ( os.path.isdir(item1_path) and os.path.isdir(item2_path) ):
-            res = compare_csv_folders_single_threaded(uploaded_folder_path=item2_path,
-                                original_folder_path=item1_path,
-                                progress_to_show_in_gui=update_progress_bar,
-                                status_to_show_in_gui=update_progress_status,
-                                uploaded_file_identifying_field_index=index2_identifier,
-                                original_file_identifying_field_index=index1_identifier,
-                                ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces_value.get())
-            write_multiple_issues_single_threaded(res, update_progress_bar, update_progress_status, output_dir, excel_output)
+            if multithreaded_value.get():
+                res = compare_csv_folders(uploaded_folder_path=item2_path,
+                                    original_folder_path=item1_path,
+                                    progress_to_show_in_gui=update_progress_bar,
+                                    status_to_show_in_gui=update_progress_status,
+                                    uploaded_file_identifying_field_index=index2_identifier,
+                                    original_file_identifying_field_index=index1_identifier,
+                                    ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces_value.get())
+                write_multiple_issues(res, update_progress_bar, update_progress_status, output_dir, excel_output)
+            else:
+                res = compare_csv_folders_single_threaded(uploaded_folder_path=item2_path,
+                                    original_folder_path=item1_path,
+                                    progress_to_show_in_gui=update_progress_bar,
+                                    status_to_show_in_gui=update_progress_status,
+                                    uploaded_file_identifying_field_index=index2_identifier,
+                                    original_file_identifying_field_index=index1_identifier,
+                                    ignore_leading_and_trailing_whitespaces=ignore_leading_and_trailing_whitespaces_value.get())
+                write_multiple_issues_single_threaded(res, update_progress_bar, update_progress_status, output_dir, excel_output)
 
         # Run single file logic if its a file path being provided
         if ( os.path.isfile(item1_path) and os.path.isfile(item2_path) ):
@@ -159,6 +170,7 @@ if __name__ == "__main__":
     root.geometry('870x190')
     use_excel = tk.BooleanVar(value=config["output_to_excel"])  # Boolean variable, initially True (checked)
     ignore_leading_and_trailing_whitespaces_value = tk.BooleanVar(value=config["ignore_leading_and_trailing_whitespaces"])
+    multithreaded_value = tk.BooleanVar(value=config["multithreaded"])
 
     file_selector_frame = tk.Frame(root)
     file_selector_frame.pack(fill=tk.X, pady=10)
@@ -241,21 +253,30 @@ if __name__ == "__main__":
     output_label = tk.Label(progress_frame, text="")
     output_label.pack(fill=tk.X)
 
+    # Bottom options and compare button frame
+    bottom_frame = tk.Frame(root)
+    bottom_frame.pack(fill=tk.X)
+
     # Bottom options frame
-    bottom_options_frame = tk.Frame(root)
-    bottom_options_frame.pack(fill=tk.X)
+    bottom_options_frame = tk.Frame(bottom_frame)
+    bottom_options_frame.pack(side=tk.LEFT)
 
     excel_checkbox = tk.Checkbutton(
         bottom_options_frame, text="Output to Excel", variable=use_excel
     )
-    excel_checkbox.pack(side=tk.LEFT, padx=25)
+    excel_checkbox.pack(padx=25, side=tk.LEFT)
 
     ignore_leading_and_trailing_whitespaces_checkbox = tk.Checkbutton(
         bottom_options_frame, text="Ignore whitespaces", variable=ignore_leading_and_trailing_whitespaces_value
     )
-    ignore_leading_and_trailing_whitespaces_checkbox.pack(side=tk.LEFT, padx=25)
+    ignore_leading_and_trailing_whitespaces_checkbox.pack(padx=25, side=tk.LEFT)
 
-    compare_button = tk.Button(bottom_options_frame, text="Compare", command=compare_button_click)
+    multithreaded_checkbox = tk.Checkbutton(
+        bottom_options_frame, text="Multithreading", variable=multithreaded_value
+    )
+    multithreaded_checkbox.pack(padx=25, side=tk.LEFT)
+
+    compare_button = tk.Button(bottom_frame, text="Compare", command=compare_button_click)
     compare_button.pack(side=tk.RIGHT, padx=25)
 
     root.mainloop()
@@ -267,5 +288,6 @@ if __name__ == "__main__":
        "ori_identifier_idx": index1_var.get(),
        "upl_identifier_idx": index2_var.get(),
        "output_folder": output_dir_var.get(),
-       "ignore_leading_and_trailing_whitespaces": ignore_leading_and_trailing_whitespaces_value.get()
+       "ignore_leading_and_trailing_whitespaces": ignore_leading_and_trailing_whitespaces_value.get(),
+       "multithreaded": multithreaded_value.get()
     })
