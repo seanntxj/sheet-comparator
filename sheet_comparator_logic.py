@@ -11,7 +11,6 @@ Assumptions:
 import csv 
 import sys
 import os.path
-# from tqdm import tqdm
 import time
 from enum import Enum
 from openpyxl import Workbook, styles, load_workbook
@@ -191,10 +190,12 @@ def find_discrepancies(uploaded_file_path: str,
     # If it exists, compare that row of values to the original 
     # Each ROW 
     for row_num, row_from_ori_csv in enumerate( ori_csv_reader ):
+        # Row from original sheet cannot be found in the uploaded sheet
         if row_from_ori_csv[original_file_identifying_field_index] not in uploaded_hashed_csv:
             issues.insert_issue_missing_uploaded_row(row_from_ori_csv, row_from_ori_csv[original_file_identifying_field_index], original_file_identifying_field_index)
             continue
 
+        # Corresponding row from the uploaded sheet 
         row_from_uploaded_csv = uploaded_hashed_csv[row_from_ori_csv[original_file_identifying_field_index]]
 
         # Each COLUMN (CELL)
@@ -202,6 +203,10 @@ def find_discrepancies(uploaded_file_path: str,
         for col_num in range(len(fields_ori_csv)):
             cell_from_ori_csv = row_from_ori_csv[col_num]
             cell_from_upl_csv = row_from_uploaded_csv[uploaded_hashed_fields_index[fields_ori_csv[col_num]]]
+            # TODO Ignore trailing whitespaces feature
+            # if ignore_trailing_whitespaces:
+            #     cell_from_ori_csv = cell_from_ori_csv.strip() 
+            #     cell_from_upl_csv = cell_from_upl_csv.strip()
             if cell_from_ori_csv != cell_from_upl_csv:
                 mismatched_fields.append(col_num)
         if len(mismatched_fields) > 0: 
@@ -305,7 +310,6 @@ def write_issues(issues: ISSUES_MAIN, output_dir: str = "", use_excel: bool = Fa
     # Exit prematurely if there's no issues to write
     if len(issues.issue_list) == 0: 
         return
-    
 
     # Get the exact path and file to log 
     log_file_path = f'{output_dir}/issues_{issues.name}_{time.strftime("%Y_%m_%d_%H_%M_%S", time.gmtime())}'
