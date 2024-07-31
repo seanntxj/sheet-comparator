@@ -1,6 +1,6 @@
 # Sheet Comparator
 
-Very versatile sheet comparison tool. Speed tbd.
+Very versatile sheet comparison tool for CSVs and Excel. For use in data validation between systems.
 
 ## Getting Started
 
