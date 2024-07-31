@@ -1,5 +1,12 @@
 import pandas as pd
 import Levenshtein
+import os
+from enum import Enum
+
+class DataframePlus:
+    def __init__(self, df: pd.DataFrame, file_path: str):
+        self.df = df
+        self.filename = os.path.basename(file_path)
 
 def merge_dfs(df1, df2, df1_identifier_column, df2_identifier_column):
     '''
@@ -44,8 +51,19 @@ def find_nearest_string(target, list_of_strings):
 
     return best_match
 
+def get_folder_contents(folder_path: str, types: list[str]) -> list[str]:
+    return [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.split('.')[-1] in types]
+
+def get_dataframes(file_paths: list[str], infer_types: bool = False) -> list[DataframePlus]:
+    def get_reader(file_path):
+        _, ext = os.path.splitext(file_path)
+        return pd.read_csv if ext == '.csv' else pd.read_excel
+    dtype = None if infer_types else object
+    return [DataframePlus(get_reader(file_path)(file_path, dtype=dtype), file_path) for file_path in file_paths]
+
 if __name__ == "__main__": 
     # Load all dataframes into memory 
+    dataframes = get_dataframes(get_folder_contents('test_data', ['csv', 'xlsx']))
     # Establish which dataframe is the primary
     # Establish which dataframes have what columns
     # Using the primary dataframe, start to merge with the others 
