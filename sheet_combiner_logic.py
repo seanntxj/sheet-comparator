@@ -73,15 +73,53 @@ if __name__ == "__main__":
     # Establish which dataframe is the primary
     primary_dataframe = pop_primary_dataframe('spte-kna1.xlsx', dataframes=dataframes)
     # Establish which dataframes have what columns
-    for dataframe in dataframes:
-        print(dataframe.filename)
+    # for dataframe in dataframes:
+    #     print(dataframe.filename)
 
     # Using the primary dataframe, start to merge with the others 
     # Return the merged dataframe
-    master_df = merge_dfs(df1=primary_dataframe.df, df2=dataframes[2].df, df1_identifier_column='Address', df2_identifier_column='Address number')
+    master_df = merge_dfs(df1=primary_dataframe.df, df2=dataframes[4].df, df1_identifier_column='Customer', df2_identifier_column='Customer')
+    master_df = merge_dfs(df1=master_df, df2=dataframes[2].df, df1_identifier_column='Address', df2_identifier_column='Address number')
     master_df = merge_dfs(df1=master_df, df2=dataframes[0].df, df1_identifier_column='Address', df2_identifier_column='Address number')
     master_df = merge_dfs(df1=master_df, df2=dataframes[1].df, df1_identifier_column='Address', df2_identifier_column='Address number')
     master_df = merge_dfs(df1=master_df, df2=dataframes[3].df, df1_identifier_column='Customer', df2_identifier_column='Customer')
     
+    # Rename the columns
+    final_columns = ["Customer","Company Code","Buyer’s Name 1","Buyer's Name 2","Buyer's Name 3","Buyer's Name 4","Buyer’s TIN","Tax Number 1","Tax Number 2","Buyer’s SST Registration Number ( Sales Tax)","Buyer’s SST Registration Number (Service Tax)","Buyer's ID Number- Registration / Identification Number / Passport Number2","Search Term 2","Buyer's E-mail","Buyer’s Address - Address Line 1","Buyer’s Address - Address Line 2","Buyer’s Address - Address Line 3","Buyer’s Address - Address Line 4","Buyer’s Address - Address Line 5","Buyer’s Address - Postal Zone","Buyer’s Address - City Name","Buyer’s Address - State","Buyer’s Address - Country","Buyer’s Contact Number"]
+    column_mapping = {
+        "Customer": "Customer",
+        "Company Code": "Company Code",
+        "Buyer’s Name 1": "Name",
+        "Buyer's Name 2": "Name 2",
+        "Buyer's Name 3": "Name 3",
+        "Buyer's Name 4": "Name 4",
+        "Buyer’s TIN": "Tax Identification Number",  
+        "Tax Number 1": "Tax Number 1",
+        "Tax Number 2": "Tax Number 2",
+        "Buyer’s SST Registration Number ( Sales Tax)": "Tax Number 3",  
+        "Buyer’s SST Registration Number (Service Tax)": "Tax Number 4",  
+        "Buyer's ID Number- Registration / Identification Number / Passport Number2": "Tax Number 5",  
+        "Search Term 2": "Search Term 2",
+        "Buyer’s Address - Address Line 1": "Street",
+        "Buyer’s Address - Address Line 2": "Street 2",
+        "Buyer’s Address - Address Line 3": "Street 3",
+        "Buyer’s Address - Address Line 4": "Street 4",
+        "Buyer’s Address - Address Line 5": "Street 5",
+        "Buyer’s Address - Postal Zone": "Postal Code",
+        "Buyer’s Address - City Name": "City",
+        "Buyer’s Address - State": "Region",  
+        "Buyer’s Address - Country": "Country",
+        "Buyer’s Contact Number": "Telephone number"
+    }
+
+    # Rename
+    for column in column_mapping:
+        master_df = master_df.rename(columns={column_mapping[column]: column})
+    # Remove any not used columns 
+    for column in list(master_df.columns):
+        if column not in final_columns: 
+            master_df = master_df.drop(column, axis=1)
+    # Order columns correctly 
+    master_df = master_df.reindex(columns=final_columns)
+    # Output
     master_df.to_excel('result.xlsx', index=False)
-    pass
