@@ -8,7 +8,7 @@ class DataframePlus:
         self.df = df
         self.filename = os.path.basename(file_path)
 
-def merge_dfs(df1, df2, df1_identifier_column, df2_identifier_column):
+def merge_dfs(df1: pd.DataFrame, df2: pd.DataFrame, df1_identifier_column: str, df2_identifier_column: str) -> pd.DataFrame:
     '''
     Merge two Pandas Dataframes
     Keep all rows from the first dataframe, only keep the first dataframe's copy of a column which appears in both dataframes.
@@ -20,7 +20,7 @@ def merge_dfs(df1, df2, df1_identifier_column, df2_identifier_column):
     resulting_df = pd.merge(df1, df2, how='left', left_on=df1_identifier_column, right_on=df1_identifier_column, suffixes=('', '_removeMe')) 
     return resulting_df
 
-def find_nearest_string(target, list_of_strings):
+def find_nearest_string(target: str, list_of_strings: list[str]) -> str:
     """
     Finds the closest string in a list of strings with a combination of the Levenshtein distance and string size consistency.
     Closest string to the target is the least number of substitutions in a potential string INCLUDING removal of characters.
@@ -52,7 +52,8 @@ def find_nearest_string(target, list_of_strings):
     return best_match
 
 def get_folder_contents(folder_path: str, types: list[str]) -> list[str]:
-    return [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.split('.')[-1] in types]
+    types = [type.lower() for type in types]
+    return [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.split('.')[-1].lower() in types]
 
 def get_dataframes(file_paths: list[str], infer_types: bool = False) -> list[DataframePlus]:
     def get_reader(file_path):
@@ -61,11 +62,26 @@ def get_dataframes(file_paths: list[str], infer_types: bool = False) -> list[Dat
     dtype = None if infer_types else object
     return [DataframePlus(get_reader(file_path)(file_path, dtype=dtype), file_path) for file_path in file_paths]
 
+def pop_primary_dataframe(name: str, dataframes: list[DataframePlus]) -> DataframePlus:
+    for i, dataframe in enumerate(dataframes):
+        if name.lower() == dataframe.filename.lower(): 
+            return dataframes.pop(i)
+         
 if __name__ == "__main__": 
     # Load all dataframes into memory 
-    dataframes = get_dataframes(get_folder_contents('test_data', ['csv', 'xlsx']))
+    dataframes = get_dataframes(get_folder_contents('test_data/unmerged', ['csv', 'xlsx']))
     # Establish which dataframe is the primary
+    primary_dataframe = pop_primary_dataframe('spte-kna1.xlsx', dataframes=dataframes)
     # Establish which dataframes have what columns
+    for dataframe in dataframes:
+        print(dataframe.filename)
+
     # Using the primary dataframe, start to merge with the others 
     # Return the merged dataframe
+    master_df = merge_dfs(df1=primary_dataframe.df, df2=dataframes[2].df, df1_identifier_column='Address', df2_identifier_column='Address number')
+    master_df = merge_dfs(df1=master_df, df2=dataframes[0].df, df1_identifier_column='Address', df2_identifier_column='Address number')
+    master_df = merge_dfs(df1=master_df, df2=dataframes[1].df, df1_identifier_column='Address', df2_identifier_column='Address number')
+    master_df = merge_dfs(df1=master_df, df2=dataframes[3].df, df1_identifier_column='Customer', df2_identifier_column='Customer')
+    
+    master_df.to_excel('result.xlsx', index=False)
     pass
