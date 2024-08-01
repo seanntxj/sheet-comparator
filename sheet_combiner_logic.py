@@ -62,16 +62,16 @@ def get_dataframes(file_paths: list[str], infer_types: bool = False) -> list[Dat
     dtype = None if infer_types else object
     return [DataframePlus(get_reader(file_path)(file_path, dtype=dtype), file_path) for file_path in file_paths]
 
-def pop_primary_dataframe(name: str, dataframes: list[DataframePlus]) -> DataframePlus:
+def pop_primary_dataframe(name: str, dataframes: list[DataframePlus]) -> tuple[DataframePlus, list[DataframePlus]]:
     for i, dataframe in enumerate(dataframes):
         if name.lower() == dataframe.filename.lower(): 
-            return dataframes.pop(i)
+            return dataframes.pop(i), dataframes
          
 if __name__ == "__main__": 
     # Load all dataframes into memory 
     dataframes = get_dataframes(get_folder_contents('test_data/unmerged', ['csv', 'xlsx']))
     # Establish which dataframe is the primary
-    primary_dataframe = pop_primary_dataframe('spte-kna1.xlsx', dataframes=dataframes)
+    primary_dataframe, dataframes = pop_primary_dataframe('spte-kna1.xlsx', dataframes=dataframes)
     # Establish which dataframes have what columns
     # for dataframe in dataframes:
     #     print(dataframe.filename)
@@ -85,7 +85,6 @@ if __name__ == "__main__":
     master_df = merge_dfs(df1=master_df, df2=dataframes[3].df, df1_identifier_column='Customer', df2_identifier_column='Customer')
     
     # Rename the columns
-    final_columns = ["Customer","Company Code","Buyer’s Name 1","Buyer's Name 2","Buyer's Name 3","Buyer's Name 4","Buyer’s TIN","Tax Number 1","Tax Number 2","Buyer’s SST Registration Number ( Sales Tax)","Buyer’s SST Registration Number (Service Tax)","Buyer's ID Number- Registration / Identification Number / Passport Number2","Search Term 2","Buyer's E-mail","Buyer’s Address - Address Line 1","Buyer’s Address - Address Line 2","Buyer’s Address - Address Line 3","Buyer’s Address - Address Line 4","Buyer’s Address - Address Line 5","Buyer’s Address - Postal Zone","Buyer’s Address - City Name","Buyer’s Address - State","Buyer’s Address - Country","Buyer’s Contact Number"]
     column_mapping = {
         "Customer": "Customer",
         "Company Code": "Company Code",
@@ -111,7 +110,7 @@ if __name__ == "__main__":
         "Buyer’s Address - Country": "Country",
         "Buyer’s Contact Number": "Telephone number"
     }
-
+    final_columns = [column for column in column_mapping]
     # Rename
     for column in column_mapping:
         master_df = master_df.rename(columns={column_mapping[column]: column})
